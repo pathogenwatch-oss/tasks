@@ -1,0 +1,24 @@
+{
+  "name": "wgsa-tasks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "lerna bootstrap",
+    "clean": "lerna clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/cgps/wgsa-tasks.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/cgps/wgsa-tasks/issues"
+  },
+  "homepage": "https://gitlab.com/cgps/wgsa-tasks#README",
+  "devDependencies": {
+    "lerna": "^2.4.0"
+  }
+}
