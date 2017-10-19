@@ -59,6 +59,7 @@ function read(stdin) {
 read(process.stdin)
   .then(JSON.parse)
   .then(format)
+  .then(JSON.stringify)
   .then(console.log)
   .catch(e => {
     console.error(e);
