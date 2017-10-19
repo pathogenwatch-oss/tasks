@@ -1,0 +1,20 @@
+{
+  "name": "wgsa-tasks-speciator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.com:cgps/wgsa-tasks-speciator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mash-sketches": "gitlab:cgps/mash-sketches#v78.5.0",
+    "mash-speciator": "gitlab:cgps/mash-speciator#v4.0.0"
+  }
+}
