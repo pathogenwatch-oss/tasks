@@ -1,14 +1,14 @@
 {
   "name": "wgsa-tasks-metrics",
   "version": "1.0.0",
-  "description": "## Input",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git@gitlab.com:cgps/wgsa-tasks/metrics.git"
+    "url": "git@gitlab.com:cgps/wgsa-tasks.git"
   },
   "keywords": [],
   "author": "",

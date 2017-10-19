@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@gitlab.com:cgps/wgsa-task.git"
+    "url": "git@gitlab.com:cgps/wgsa-tasks.git"
   },
   "author": "",
   "license": "ISC"
