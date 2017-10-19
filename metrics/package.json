@@ -1,0 +1,19 @@
+{
+  "name": "wgsa-tasks-metrics",
+  "version": "1.0.0",
+  "description": "## Input",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.com:cgps/wgsa-tasks/metrics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "get-stdin": "^5.0.1"
+  }
+}
