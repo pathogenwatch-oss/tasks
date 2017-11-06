@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tag=t1
+tag=v1
 
 for dir in */; do
   task=$(basename $dir)
