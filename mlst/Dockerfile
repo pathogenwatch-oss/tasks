@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/cgps-mlst:1.0.0
+FROM registry.gitlab.com/cgps/cgps-mlst:1.1.1
 
 COPY formatter.js /wgsa
 
