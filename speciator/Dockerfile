@@ -17,4 +17,4 @@ RUN apk add --update --no-cache --virtual build-deps \
 
 WORKDIR /opt/wgsa
 
-CMD [ "/opt/wgsa/index.sh" ]
+CMD [ "sh", "/opt/wgsa/index.sh" ]
