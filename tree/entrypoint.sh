@@ -2,12 +2,8 @@
 
 set -e
 
-cd /wgsa
+node /wgsa/build-matrix.js
 
-node /wgsa/input.js
+/usr/bin/Rscript /wgsa/create-tree.r matrix.csv tree.nwk
 
-cd /data
-
-/tree_pipeline.sh -s $WGSA_ORGANISM_TAXID -i . > /dev/null
-
-echo { \"tree\": \"$(cat wgsa.nwk)\", \"matrix\": \"$(cat result.mldist)\" }
+echo { \"tree\": \"$(cat tree.nwk)\" }
