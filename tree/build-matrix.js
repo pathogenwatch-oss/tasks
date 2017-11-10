@@ -1,4 +1,5 @@
 const es = require('event-stream');
+const bs = require('bson-stream');
 const fs = require('fs');
 const path = require('path');
 const spawn = require('child_process').spawn;
@@ -11,24 +12,16 @@ function saveProfiles(stream) {
   return new Promise((resolve, reject) => {
     const ids = [];
     const coreProfiles = [];
-    stream
-      .pipe(es.split())
-      .pipe(es.map((data, done) => {
-        if (data.length > 1) {          
-          const json = JSON.parse(data);
-          delete json.analysis.core.__v;          
-          const coreProfile = JSON.stringify(json.analysis.core);
-          // const coreProfile = data;
-          
-          ids.push(json._id.$oid ? json._id.$oid : json._id);
-          // ids.push(`leaf${coreProfiles.length}`);
 
-          const file = path.join(dataPath, `${coreProfiles.length}_core.jsn`);
-          fs.writeFile(file, coreProfile, done);
-          coreProfiles.push(file);
-        } else {
-          done(null);
-        }
+    stream
+      .pipe(new bs())
+      .pipe(es.map((data, done) => {
+        delete data.analysis.core.__v;
+        const coreProfile = data.analysis.core;
+        ids.push(`leaf${coreProfiles.length}`);
+        const file = path.join(dataPath, `${coreProfiles.length}_core.jsn`);
+        fs.writeFile(file, JSON.stringify(coreProfile), done);
+        coreProfiles.push(file);
       }))
       .on('error', reject)
       .on('end', () => resolve({ ids, coreProfiles }));
@@ -37,13 +30,13 @@ function saveProfiles(stream) {
 
 function compareProfiles(item, coreProfiles, done) {
   const child = spawn('python', [ 'distance-score-snp.py', item, ...coreProfiles ]);
-  
+
   const buffer = [];
 
   child.stdout.on('data', (data) => {
     buffer.push(data);
   });
-  
+
   child.on('close', (code) => {
     if(code === 0) {
       done(null, buffer);
@@ -56,7 +49,7 @@ function compareProfiles(item, coreProfiles, done) {
 function compareProfile(coreProfiles, item, done) {
   const index = coreProfiles.indexOf(item);
   if (index > 0) {
-    compareProfiles(item, coreProfiles.slice(0, index), done);          
+    compareProfiles(item, coreProfiles.slice(0, index), done);
   } else {
     done(null, []);
   }
@@ -69,7 +62,7 @@ function pairProfiles(coreProfiles) {
     if (index === coIndex) {
       pairs.push([ coreProfiles[index] ]);
     } else {
-      pairs.push([ 
+      pairs.push([
         coreProfiles[index],
         coreProfiles[coreProfiles.length - 1 - index],
       ]);
@@ -92,8 +85,8 @@ function flatenPairedResults(results) {
 function buildMatrix({ ids, coreProfiles }) {
   return new Promise((resolve, reject) => {
     mapLimit(
-      pairProfiles(coreProfiles), 
-      limit, 
+      pairProfiles(coreProfiles),
+      limit,
       (pair, done) => {
         compareProfile(coreProfiles, pair[0], (err0, vector0) => {
           if (err0) return done(err0);
@@ -105,11 +98,11 @@ function buildMatrix({ ids, coreProfiles }) {
         });
         // const index = coreProfiles.indexOf(item);
         // if (index > 0) {
-        //   compareProfiles(item, coreProfiles.slice(0, index), done);          
+        //   compareProfiles(item, coreProfiles.slice(0, index), done);
         // } else {
         //   done(null, []);
         // }
-      }, 
+      },
       (err, results) => {
         if (err) {
           reject(err);
@@ -129,16 +122,16 @@ function buildTree({ ids, matrix }) {
   const matrixFile = 'matrix.csv';
   return new Promise((resolve, reject) => {
     const inputFile = fs.createWriteStream(matrixFile);
-    inputFile.write('ID\t');  
-    inputFile.write(labels.join('\t'));  
-    inputFile.write('\n');  
+    inputFile.write('ID\t');
+    inputFile.write(labels.join('\t'));
+    inputFile.write('\n');
     for (let index = 0; index < matrix.length; index++) {
-      inputFile.write(labels[index]);  
+      inputFile.write(labels[index]);
       inputFile.write('\t');
       for(const buffer of matrix[index]) {
         inputFile.write(buffer, 'utf8');
       }
-      inputFile.write('\n');  
+      inputFile.write('\n');
     }
     resolve(matrixFile);
   });
@@ -146,6 +139,6 @@ function buildTree({ ids, matrix }) {
 
 Promise.resolve(process.stdin)
   .then(saveProfiles)
-  .then(buildMatrix)
-  .then(buildTree)
+  // .then(buildMatrix)
+  // .then(buildTree)
   .catch(err => console.error('ERROR') || console.error(err));
