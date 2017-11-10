@@ -53,6 +53,8 @@ function compareProfiles(item, coreProfiles, done) {
   });
 }
 
+function compareProfile(coreProfiles, item, done) {
+  const index = coreProfiles.indexOf(item);
   if (index > 0) {
     compareProfiles(item, coreProfiles.slice(0, index), done);          
   } else {
