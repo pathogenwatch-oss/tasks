@@ -10,11 +10,28 @@ const matrixFile = 'matrix.csv';
 
 const limit = process.env.WGSA_WORKERS || 8;
 
+const ids = [];
+const coreProfiles = [];
+
+function outputScores(file, vector) {
+  const index = coreProfiles.indexOf(file);
+  if (index === 0) return;
+  const id = ids[index];
+  const scores = vector.join('').split('\t');
+  // for (let j = 0; j < scores.length; j++) {
+  //   process.stdout.write(`[ "${id}", "${ids[j]}", ${scores[j]} ]`);
+  //   process.stdout.write('\n');
+  // }
+  const doc = { id, scores: {} };
+  for (let j = 0; j < scores.length; j++) {
+    doc.scores[ids[j]] = scores[j];
+  }
+  process.stdout.write(JSON.stringify(doc));
+  process.stdout.write('\n');
+}
+
 function saveProfiles(stream) {
   return new Promise((resolve, reject) => {
-    const ids = [];
-    const coreProfiles = [];
-
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
@@ -79,7 +96,7 @@ function pairProfiles(coreProfiles) {
   return pairs;
 }
 
-function flatenPairedResults(results) {
+function flattenPairedResults(results) {
   const matrix = [];
   for (var index = 0; index < results.length; index++) {
     matrix.push(results[index][0]);
@@ -98,9 +115,11 @@ function buildMatrix({ ids, coreProfiles }) {
       (pair, done) => {
         compareProfile(coreProfiles, pair[0], (err0, vector0) => {
           if (err0) return done(err0);
+          outputScores(pair[0], vector0);
           if (pair.length === 1) return done(null, [ vector0 ]);
           compareProfile(coreProfiles, pair[1], (err1, vector1) => {
             if (err1) return done(err1);
+            outputScores(pair[1], vector1);          
             done(null, [ vector0, vector1 ]);
           });
         });
@@ -115,14 +134,14 @@ function buildMatrix({ ids, coreProfiles }) {
         if (err) {
           reject(err);
         } else {
-          resolve({ ids, matrix: flatenPairedResults(results) });
+          resolve({ ids, matrix: flattenPairedResults(results) });
         }
       }
     );
   });
 }
 
-function buildTree({ ids, matrix }) {
+function buildTree({ matrix }) {
   const labels = ids;
   return new Promise((resolve, reject) => {
     const inputFile = fs.createWriteStream(matrixFile);

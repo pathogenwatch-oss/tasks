@@ -7,9 +7,6 @@ const bson = new Bson();
 
 let index = 0;
 
-JSON.stringify
-      bsonify
-
 process.stdin
   .pipe(es.split())
   .pipe(
