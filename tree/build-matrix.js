@@ -6,6 +6,8 @@ const spawn = require('child_process').spawn;
 const mapLimit = require('async/mapLimit');
 
 const dataPath = '.';
+const matrixFile = 'matrix.csv';
+
 const limit = process.env.WGSA_WORKERS || 8;
 
 function saveProfiles(stream) {
@@ -18,10 +20,10 @@ function saveProfiles(stream) {
       .pipe(es.map((data, done) => {
         delete data.analysis.core.__v;
         const coreProfile = data.analysis.core;
-        ids.push(`leaf${coreProfiles.length}`);
-        const file = path.join(dataPath, `${coreProfiles.length}_core.jsn`);
-        fs.writeFile(file, JSON.stringify(coreProfile), done);
+        ids.push(data._id.toString());
+        const file = path.join(dataPath, `core-${data._id}.json`);
         coreProfiles.push(file);
+        fs.writeFile(file, JSON.stringify(coreProfile), done);
       }))
       .on('error', reject)
       .on('end', () => resolve({ ids, coreProfiles }));
@@ -29,7 +31,7 @@ function saveProfiles(stream) {
 }
 
 function compareProfiles(item, coreProfiles, done) {
-  const child = spawn('python', [ 'distance-score-snp.py', item, ...coreProfiles ]);
+  const child = spawn('python', [ 'distance-score.py', item, ...coreProfiles ]);
 
   const buffer = [];
 
@@ -41,7 +43,13 @@ function compareProfiles(item, coreProfiles, done) {
     if(code === 0) {
       done(null, buffer);
     } else {
-      done(code);
+      const error = [];
+      child.stderr.on('data', (data) => {
+        error.push(data.toString());
+      });
+      child.stderr.on('close', (data) => {
+        done({ code, error: error.join('\n') });        
+      });
     }
   });
 }
@@ -116,10 +124,6 @@ function buildMatrix({ ids, coreProfiles }) {
 
 function buildTree({ ids, matrix }) {
   const labels = ids;
-  // for (let index = 1000; index < 1000 + matrix.length; index++) {
-  //   labels.push(`leaf${index}`);
-  // }
-  const matrixFile = 'matrix.csv';
   return new Promise((resolve, reject) => {
     const inputFile = fs.createWriteStream(matrixFile);
     inputFile.write('ID\t');
@@ -139,6 +143,6 @@ function buildTree({ ids, matrix }) {
 
 Promise.resolve(process.stdin)
   .then(saveProfiles)
-  // .then(buildMatrix)
-  // .then(buildTree)
+  .then(buildMatrix)
+  .then(buildTree)
   .catch(err => console.error('ERROR') || console.error(err));

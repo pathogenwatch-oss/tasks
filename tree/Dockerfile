@@ -8,6 +8,7 @@ COPY build-matrix.js /wgsa/build-matrix.js
 COPY node_modules/ /wgsa/node_modules/
 
 COPY create-tree.r /wgsa/create-tree.r
+COPY distance-score.py /wgsa/distance-score.py
 COPY distance-score-snp.py /wgsa/distance-score-snp.py
 
 COPY entrypoint.sh /wgsa/entrypoint.sh
