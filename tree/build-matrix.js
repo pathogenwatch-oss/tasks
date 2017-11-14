@@ -11,20 +11,14 @@ const matrixFile = 'matrix.csv';
 const limit = process.env.WGSA_WORKERS || 8;
 
 const ids = [];
+const fileIds = [];
 const coreProfiles = [];
+const scoreCache = {};
 
-function outputScores(file, vector) {
-  const index = coreProfiles.indexOf(file);
-  if (index === 0) return;
-  const id = ids[index];
-  const scores = vector.join('').split('\t');
-  // for (let j = 0; j < scores.length; j++) {
-  //   process.stdout.write(`[ "${id}", "${ids[j]}", ${scores[j]} ]`);
-  //   process.stdout.write('\n');
-  // }
-  const doc = { id, scores: {} };
-  for (let j = 0; j < scores.length; j++) {
-    doc.scores[ids[j]] = scores[j];
+function outputScores(input, vector) {
+  const doc = { fileId: fileIds[input[0]], scores: {} };
+  for (let i = 0; i < vector.length; i++) {
+    doc.scores[fileIds[input[i + 1]]] = vector[i];
   }
   process.stdout.write(JSON.stringify(doc));
   process.stdout.write('\n');
@@ -35,30 +29,40 @@ function saveProfiles(stream) {
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
-        delete data.analysis.core.__v;
-        const coreProfile = data.analysis.core;
-        ids.push(data._id.toString());
-        const file = path.join(dataPath, `core-${data._id}.json`);
-        coreProfiles.push(file);
-        fs.writeFile(file, JSON.stringify(coreProfile), done);
+        if (data.scores) {
+          scoreCache[data.fileId] = data.scores;
+          done();
+        } else {
+          delete data.analysis.core.__v;
+          const coreProfile = data.analysis.core;
+          ids.push(data._id.toString());
+          fileIds.push(data.fileId);
+          const file = path.join(dataPath, `core-${data._id}.json`);
+          coreProfiles.push(file);
+          fs.writeFile(file, JSON.stringify(coreProfile), done);
+        }
       }))
       .on('error', reject)
       .on('end', () => resolve({ ids, coreProfiles }));
   });
 }
 
-function compareProfiles(item, coreProfiles, done) {
-  const child = spawn('python', [ 'distance-score.py', item, ...coreProfiles ]);
+function compareProfiles(input, done) {
+  const args = input.reduce((memo, index) => {
+    memo.push(path.join(dataPath, `core-${ids[index]}.json`));
+    return memo;
+  }, [ 'distance-score.py' ]);
+  const child = spawn('python', args);
 
   const buffer = [];
 
   child.stdout.on('data', (data) => {
-    buffer.push(data);
+    buffer.push(data.toString());
   });
 
   child.on('close', (code) => {
     if(code === 0) {
-      done(null, buffer);
+      done(null, buffer.join('').split('\t'));
     } else {
       const error = [];
       child.stderr.on('data', (data) => {
@@ -71,77 +75,54 @@ function compareProfiles(item, coreProfiles, done) {
   });
 }
 
-function compareProfile(coreProfiles, item, done) {
-  const index = coreProfiles.indexOf(item);
-  if (index > 0) {
-    compareProfiles(item, coreProfiles.slice(0, index), done);
-  } else {
-    done(null, []);
-  }
-}
-
-function pairProfiles(coreProfiles) {
-  const pairs = [];
-  for (var index = 0; index < coreProfiles.length / 2; index++) {
-    const coIndex = coreProfiles.length - 1 - index;
-    if (index === coIndex) {
-      pairs.push([ coreProfiles[index] ]);
-    } else {
-      pairs.push([
-        coreProfiles[index],
-        coreProfiles[coreProfiles.length - 1 - index],
-      ]);
+function buildMatrix() {
+  const matrix = [];
+  const comparisons = [];
+  for (let i = 0; i < ids.length; i++) {
+    const row = fileIds[i];    
+    matrix.push([]);
+    const uncached = [ i ];
+    for (let j = 0; j < i; j++) {
+      const col = fileIds[j];
+      const cache = scoreCache[row];
+      if (row in scoreCache && col in scoreCache[row]) {
+        matrix[i].push(scoreCache[row][col]);        
+      } else {
+        matrix[i].push(null);
+        uncached.push(j);        
+      }
+    }
+    if (uncached.length > 1) {
+      comparisons.push(uncached);
     }
   }
-  return pairs;
-}
 
-function flattenPairedResults(results) {
-  const matrix = [];
-  for (var index = 0; index < results.length; index++) {
-    matrix.push(results[index][0]);
-  }
-  for (var index = results.length - (results[results.length - 1].length === 1 ? 2 : 1); index >= 0; index--) {
-    matrix.push(results[index][1]);
-  }
-  return matrix;
-}
-
-function buildMatrix({ ids, coreProfiles }) {
   return new Promise((resolve, reject) => {
     mapLimit(
-      pairProfiles(coreProfiles),
+      comparisons,
       limit,
-      (pair, done) => {
-        compareProfile(coreProfiles, pair[0], (err0, vector0) => {
-          if (err0) return done(err0);
-          outputScores(pair[0], vector0);
-          if (pair.length === 1) return done(null, [ vector0 ]);
-          compareProfile(coreProfiles, pair[1], (err1, vector1) => {
-            if (err1) return done(err1);
-            outputScores(pair[1], vector1);          
-            done(null, [ vector0, vector1 ]);
-          });
+      (input, done) => {
+        compareProfiles(input, (err, vector) => {
+          if (err) return done(err);
+          outputScores(input, vector);
+          for (let i = 0; i < vector.length; i++) {
+            matrix[input[0]][input[i + 1]] = vector[i];
+          }
+          done(null);
         });
-        // const index = coreProfiles.indexOf(item);
-        // if (index > 0) {
-        //   compareProfiles(item, coreProfiles.slice(0, index), done);
-        // } else {
-        //   done(null, []);
-        // }
       },
-      (err, results) => {
+      (err) => {
         if (err) {
           reject(err);
         } else {
-          resolve({ ids, matrix: flattenPairedResults(results) });
+          resolve(matrix);
         }
       }
     );
   });
 }
 
-function buildTree({ matrix }) {
+function buildTree(matrix) {
   const labels = ids;
   return new Promise((resolve, reject) => {
     const inputFile = fs.createWriteStream(matrixFile);
@@ -151,9 +132,7 @@ function buildTree({ matrix }) {
     for (let index = 0; index < matrix.length; index++) {
       inputFile.write(labels[index]);
       inputFile.write('\t');
-      for(const buffer of matrix[index]) {
-        inputFile.write(buffer, 'utf8');
-      }
+      inputFile.write(matrix[index].join('\t'));
       inputFile.write('\n');
     }
     resolve(matrixFile);
