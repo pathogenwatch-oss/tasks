@@ -4,11 +4,12 @@
 args <- commandArgs(TRUE)
 
 inputFile <- args[1]
-treeFile <- args[2]
 
 #Load library
 library(ape)
 library(phangorn)
+library(methods)
+library(jsonlite)
 
 # Read similarity matrix
 # m = matrix(0, 4, 4)
@@ -34,5 +35,5 @@ arbol <- nj(as.dist(m))
 arbol_mid = midpoint(arbol)
 
 # Save Newick file
-write.tree(arbol_mid, file = treeFile, append = FALSE, digits = 10, tree.names = FALSE)
-
+newick <- write.tree(arbol_mid, append = FALSE, digits = 10, tree.names = FALSE)
+jsonlite::toJSON(list(tree = newick), auto_unbox = TRUE)

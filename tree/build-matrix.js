@@ -125,15 +125,15 @@ function buildMatrix() {
 function buildTree(matrix) {
   const labels = ids;
   return new Promise((resolve, reject) => {
-    const inputFile = fs.createWriteStream(matrixFile);
-    inputFile.write('ID\t');
-    inputFile.write(labels.join('\t'));
-    inputFile.write('\n');
+    const outStream = fs.createWriteStream(matrixFile);
+    outStream.write('ID\t');
+    outStream.write(labels.join('\t'));
+    outStream.write('\n');
     for (let index = 0; index < matrix.length; index++) {
-      inputFile.write(labels[index]);
-      inputFile.write('\t');
-      inputFile.write(matrix[index].join('\t'));
-      inputFile.write('\n');
+      outStream.write(labels[index]);
+      outStream.write('\t');
+      outStream.write(matrix[index].join('\t'));
+      outStream.write('\n');
     }
     resolve(matrixFile);
   });
