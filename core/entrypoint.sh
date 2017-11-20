@@ -2,8 +2,8 @@
 
 set -e
 
-cat - > /data/sequence.fasta
+cat - > /data/${WGSA_FILE_ID}.fasta
 
-java -jar /core-aligner.jar -i /data/sequence.fasta -s $WGSA_ORGANISM_TAXID \
+java -jar /core/core-fp.jar -i /data/${WGSA_FILE_ID}.fasta -s $WGSA_ORGANISM_TAXID
 
-cat /data/sequence_core.jsn
+echo ''
