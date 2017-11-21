@@ -10,7 +10,7 @@ const matrixFile = 'matrix.csv';
 
 const limit = process.env.WGSA_WORKERS || 8;
 
-const ids = [];
+let ids;
 const fileIds = [];
 const coreProfiles = [];
 const scoreCache = {};
@@ -33,14 +33,15 @@ function saveProfiles(stream) {
         if (data.scores) {
           scoreCache[data.fileId] = data.scores;
           done();
+        } if (data.ids) {
+          ids = data.ids;
+          done();
         } else {
-          delete data.analysis.core.__v;
-          const coreProfile = data.analysis.core;
-          ids.push(data._id.toString());
+          const { varianceData } = data.results;
           fileIds.push(data.fileId);
-          const file = path.join(dataPath, `core-${data._id}.json`);
+          const file = path.join(dataPath, `core-${ids[fileIds.length - 1]}.json`);
           coreProfiles.push(file);
-          fs.writeFile(file, JSON.stringify(coreProfile), done);
+          fs.writeFile(file, JSON.stringify(varianceData), done);
         }
       }))
       .on('error', reject)
@@ -49,7 +50,7 @@ function saveProfiles(stream) {
 }
 
 function compareProfiles(input, done) {
-  const args = [ 
+  const args = [
     '-XX:+UnlockExperimentalVMOptions',
     '-XX:+UseCGroupMemoryLimitForHeap',
     '-jar',
@@ -61,7 +62,7 @@ function compareProfiles(input, done) {
   ];
   const child = spawn('java', args);
 
-  const buffer = [];  
+  const buffer = [];
   child.stdout
     .pipe(es.split())
     .pipe(
@@ -82,7 +83,7 @@ function compareProfiles(input, done) {
         error.push(data.toString());
       });
       child.stderr.on('close', (data) => {
-        done({ code, error: error.join('\n') });        
+        done({ code, error: error.join('\n') });
       });
     }
   });
@@ -92,17 +93,17 @@ function buildMatrix() {
   const matrix = [];
   const comparisons = [];
   for (let i = 0; i < ids.length; i++) {
-    const row = fileIds[i];    
+    const row = fileIds[i];
     matrix.push([]);
     const uncached = [ i ];
     for (let j = 0; j < i; j++) {
       const col = fileIds[j];
       const cache = scoreCache[row];
       if (row in scoreCache && col in scoreCache[row]) {
-        matrix[i].push(scoreCache[row][col]);        
+        matrix[i].push(scoreCache[row][col]);
       } else {
         matrix[i].push(null);
-        uncached.push(j);        
+        uncached.push(j);
       }
     }
     if (uncached.length > 1) {
