@@ -29,6 +29,7 @@ function saveProfiles(stream) {
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
+        // console.error(data);
         if (data.scores) {
           scoreCache[data.fileId] = data.scores;
           done();
@@ -48,21 +49,33 @@ function saveProfiles(stream) {
 }
 
 function compareProfiles(input, done) {
-  const args = input.reduce((memo, index) => {
-    memo.push(path.join(dataPath, `core-${ids[index]}.json`));
-    return memo;
-  }, [ 'distance-score.py' ]);
-  const child = spawn('python', args);
+  const args = [ 
+    '-XX:+UnlockExperimentalVMOptions',
+    '-XX:+UseCGroupMemoryLimitForHeap',
+    '-jar',
+    '/core/compare-profiles.jar',
+    '-s',
+    '1280',
+    '-f',
+    input.map(index => path.join(dataPath, `core-${ids[index]}.json`)).join(',')
+  ];
+  const child = spawn('java', args);
 
-  const buffer = [];
-
-  child.stdout.on('data', (data) => {
-    buffer.push(data.toString());
-  });
+  const buffer = [];  
+  child.stdout
+    .pipe(es.split())
+    .pipe(
+      es.map((data, done) => {
+        if (data.length) {
+          buffer.push(JSON.parse(data).s);
+        }
+        done();
+      })
+    );
 
   child.on('close', (code) => {
     if(code === 0) {
-      done(null, buffer.join('').split('\t'));
+      done(null, buffer);
     } else {
       const error = [];
       child.stderr.on('data', (data) => {
