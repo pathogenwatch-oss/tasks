@@ -1,6 +1,7 @@
 const es = require('event-stream');
 const bs = require('bson-stream');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const spawn = require('child_process').spawn;
 const mapLimit = require('async/mapLimit');
@@ -8,7 +9,7 @@ const mapLimit = require('async/mapLimit');
 const dataPath = '.';
 const matrixFile = 'matrix.csv';
 
-const limit = process.env.WGSA_WORKERS || 8;
+const limit = process.env.WGSA_WORKERS || Math.max(os.cpus().length - 1, 1);
 
 let ids;
 let fileIds = [];
@@ -26,6 +27,8 @@ function outputScores(input, vector) {
 
 function saveProfiles(stream) {
   return new Promise((resolve, reject) => {
+    const startTime = process.hrtime();
+
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
@@ -46,7 +49,12 @@ function saveProfiles(stream) {
         }
       }))
       .on('error', reject)
-      .on('end', () => resolve({ ids, coreProfiles }));
+      .on('end', () => {
+        const [ durationS, durationNs ] = process.hrtime(startTime);
+        const duration = Math.round(durationS * 1000 + durationNs / 1e6);
+        console.error('profiles saved', duration);
+        resolve({ ids, coreProfiles });
+      });
   });
 }
 
@@ -59,8 +67,10 @@ function compareProfiles(input, done) {
     '-s',
     '1280',
     '-f',
-    input.map(index => path.join(dataPath, `core-${ids[index]}.json`)).join(',')
+    input.map(index => path.join(dataPath, `core-${ids[index]}.json`)).join(','),
   ];
+
+  const startTime = process.hrtime();
   const child = spawn('java', args);
 
   const buffer = [];
@@ -76,7 +86,10 @@ function compareProfiles(input, done) {
     );
 
   child.on('close', (code) => {
-    if(code === 0) {
+    const [ durationS, durationNs ] = process.hrtime(startTime);
+    const duration = Math.round(durationS * 1000 + durationNs / 1e6);
+    console.error(input.length, duration, duration / input.length);
+    if (code === 0) {
       done(null, buffer);
     } else {
       const error = [];
@@ -113,8 +126,10 @@ function buildMatrix() {
   }
 
   return new Promise((resolve, reject) => {
+    const startTime = process.hrtime();
+
     mapLimit(
-      comparisons,
+      comparisons.reverse(),
       limit,
       (input, done) => {
         compareProfiles(input, (err, vector) => {
@@ -130,6 +145,9 @@ function buildMatrix() {
         if (err) {
           reject(err);
         } else {
+          const [ durationS, durationNs ] = process.hrtime(startTime);
+          const duration = Math.round(durationS * 1000 + durationNs / 1e6);
+          console.error('all comparisons', duration);
           resolve(matrix);
         }
       }
@@ -138,9 +156,17 @@ function buildMatrix() {
 }
 
 function buildTree(matrix) {
+  const startTime = process.hrtime();
+
   const labels = ids;
   return new Promise((resolve, reject) => {
     const outStream = fs.createWriteStream(matrixFile);
+    outStream.on('end', () => {
+      const [ durationS, durationNs ] = process.hrtime(startTime);
+      const duration = Math.round(durationS * 1000 + durationNs / 1e6);
+      console.error('write matrix file', duration);
+      resolve(matrixFile);
+    });
     outStream.write('ID\t');
     outStream.write(labels.join('\t'));
     outStream.write('\n');
@@ -150,7 +176,6 @@ function buildTree(matrix) {
       outStream.write(matrix[index].join('\t'));
       outStream.write('\n');
     }
-    resolve(matrixFile);
   });
 }
 
