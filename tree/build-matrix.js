@@ -77,11 +77,11 @@ function compareProfiles(input, done) {
   child.stdout
     .pipe(es.split())
     .pipe(
-      es.map((data, done) => {
+      es.map((data, mapDone) => {
         if (data.length) {
           buffer.push(JSON.parse(data).s);
         }
-        done();
+        mapDone();
       })
     );
 
@@ -96,7 +96,7 @@ function compareProfiles(input, done) {
       child.stderr.on('data', (data) => {
         error.push(data.toString());
       });
-      child.stderr.on('close', (data) => {
+      child.stderr.on('close', () => {
         done({ code, error: error.join('\n') });
       });
     }
@@ -157,16 +157,10 @@ function buildMatrix() {
 
 function buildTree(matrix) {
   const startTime = process.hrtime();
-
   const labels = ids;
   return new Promise((resolve, reject) => {
     const outStream = fs.createWriteStream(matrixFile);
-    outStream.on('end', () => {
-      const [ durationS, durationNs ] = process.hrtime(startTime);
-      const duration = Math.round(durationS * 1000 + durationNs / 1e6);
-      console.error('write matrix file', duration);
-      resolve(matrixFile);
-    });
+    outStream.on('error', reject);
     outStream.write('ID\t');
     outStream.write(labels.join('\t'));
     outStream.write('\n');
@@ -176,6 +170,13 @@ function buildTree(matrix) {
       outStream.write(matrix[index].join('\t'));
       outStream.write('\n');
     }
+    outStream.end((err) => {
+      if (err) reject(err);
+      const [ durationS, durationNs ] = process.hrtime(startTime);
+      const duration = Math.round(durationS * 1000 + durationNs / 1e6);
+      console.error('write matrix file', duration);
+      resolve(matrixFile);
+    });
   });
 }
 
