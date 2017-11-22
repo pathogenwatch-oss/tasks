@@ -11,7 +11,7 @@ const matrixFile = 'matrix.csv';
 const limit = process.env.WGSA_WORKERS || 8;
 
 let ids;
-const fileIds = [];
+let fileIds = [];
 const coreProfiles = [];
 const scoreCache = {};
 
@@ -29,17 +29,18 @@ function saveProfiles(stream) {
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
-        // console.error(data);
+        // console.dir(data);
         if (data.scores) {
           scoreCache[data.fileId] = data.scores;
           done();
-        } if (data.ids) {
-          ids = data.ids;
+        } if (data.genomes) {
+          ids = data.genomes.map(x => x._id);
+          fileIds = data.genomes.map(x => x.fileId);
           done();
         } else {
-          const { varianceData } = data.results;
-          fileIds.push(data.fileId);
-          const file = path.join(dataPath, `core-${ids[fileIds.length - 1]}.json`);
+          const { varianceData } = data.results.core;
+          // fileIds.push(data.fileId);
+          const file = path.join(dataPath, `core-${ids[fileIds.indexOf(data.fileId)]}.json`);
           coreProfiles.push(file);
           fs.writeFile(file, JSON.stringify(varianceData), done);
         }
