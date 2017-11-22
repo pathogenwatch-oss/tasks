@@ -9,7 +9,7 @@ const mapLimit = require('async/mapLimit');
 const dataPath = '.';
 const matrixFile = 'matrix.csv';
 
-const limit = process.env.WGSA_WORKERS || Math.max(os.cpus().length - 1, 1);
+const limit = process.env.WGSA_WORKERS || 1;
 
 let ids;
 let fileIds = [];
@@ -32,16 +32,16 @@ function saveProfiles(stream) {
     stream
       .pipe(new bs())
       .pipe(es.map((data, done) => {
-        // console.dir(data);
-        if (data.scores) {
-          scoreCache[data.fileId] = data.scores;
-          done();
-        } if (data.genomes) {
-          ids = data.genomes.map(x => x._id);
+        // console.error(data);
+        if (data.genomes) {
+          ids = data.genomes.map(x => x._id.toString());
           fileIds = data.genomes.map(x => x.fileId);
           done();
+        } else if (data.scores) {
+          scoreCache[data.fileId] = data.scores;
+          done();
         } else {
-          const { varianceData } = data.results.core;
+          const { varianceData } = data.results;
           // fileIds.push(data.fileId);
           const file = path.join(dataPath, `core-${ids[fileIds.indexOf(data.fileId)]}.json`);
           coreProfiles.push(file);
@@ -50,7 +50,7 @@ function saveProfiles(stream) {
       }))
       .on('error', reject)
       .on('end', () => {
-        const [ durationS, durationNs ] = process.hrtime(startTime);
+        const [durationS, durationNs] = process.hrtime(startTime);
         const duration = Math.round(durationS * 1000 + durationNs / 1e6);
         console.error('profiles saved', duration);
         resolve({ ids, coreProfiles });
@@ -86,7 +86,7 @@ function compareProfiles(input, done) {
     );
 
   child.on('close', (code) => {
-    const [ durationS, durationNs ] = process.hrtime(startTime);
+    const [durationS, durationNs] = process.hrtime(startTime);
     const duration = Math.round(durationS * 1000 + durationNs / 1e6);
     console.error(input.length, duration, duration / input.length);
     if (code === 0) {
@@ -109,7 +109,7 @@ function buildMatrix() {
   for (let i = 0; i < ids.length; i++) {
     const row = fileIds[i];
     matrix.push([]);
-    const uncached = [ i ];
+    const uncached = [i];
     for (let j = 0; j < i; j++) {
       const col = fileIds[j];
       const cache = scoreCache[row];
@@ -145,7 +145,7 @@ function buildMatrix() {
         if (err) {
           reject(err);
         } else {
-          const [ durationS, durationNs ] = process.hrtime(startTime);
+          const [durationS, durationNs] = process.hrtime(startTime);
           const duration = Math.round(durationS * 1000 + durationNs / 1e6);
           console.error('all comparisons', duration);
           resolve(matrix);
