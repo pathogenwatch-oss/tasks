@@ -41,16 +41,16 @@ function saveProfiles(stream) {
           scoreCache[data.fileId] = data.scores;
           done();
         } else {
-          const { varianceData } = data.results;
+          const { variance } = data.results;
           // fileIds.push(data.fileId);
           const file = path.join(dataPath, `core-${ids[fileIds.indexOf(data.fileId)]}.json`);
           coreProfiles.push(file);
-          fs.writeFile(file, JSON.stringify(varianceData), done);
+          fs.writeFile(file, JSON.stringify(variance), done);
         }
       }))
       .on('error', reject)
       .on('end', () => {
-        const [durationS, durationNs] = process.hrtime(startTime);
+        const [ durationS, durationNs ] = process.hrtime(startTime);
         const duration = Math.round(durationS * 1000 + durationNs / 1e6);
         console.error('profiles saved', duration);
         resolve({ ids, coreProfiles });
@@ -86,7 +86,7 @@ function compareProfiles(input, done) {
     );
 
   child.on('close', (code) => {
-    const [durationS, durationNs] = process.hrtime(startTime);
+    const [ durationS, durationNs ] = process.hrtime(startTime);
     const duration = Math.round(durationS * 1000 + durationNs / 1e6);
     console.error(input.length, duration, duration / input.length);
     if (code === 0) {
@@ -109,10 +109,9 @@ function buildMatrix() {
   for (let i = 0; i < ids.length; i++) {
     const row = fileIds[i];
     matrix.push([]);
-    const uncached = [i];
+    const uncached = [ i ];
     for (let j = 0; j < i; j++) {
       const col = fileIds[j];
-      const cache = scoreCache[row];
       if (row in scoreCache && col in scoreCache[row]) {
         matrix[i].push(scoreCache[row][col]);
       } else {
@@ -138,14 +137,14 @@ function buildMatrix() {
           for (let i = 0; i < vector.length; i++) {
             matrix[input[0]][input[i + 1]] = vector[i];
           }
-          done(null);
+          return done(null);
         });
       },
       (err) => {
         if (err) {
           reject(err);
         } else {
-          const [durationS, durationNs] = process.hrtime(startTime);
+          const [ durationS, durationNs ] = process.hrtime(startTime);
           const duration = Math.round(durationS * 1000 + durationNs / 1e6);
           console.error('all comparisons', duration);
           resolve(matrix);
