@@ -13,10 +13,10 @@ do
         -e WGSA_FILE_ID=`shasum $file | cut -d ' ' -f 1` \
         registry.gitlab.com/cgps/wgsa-tasks/core:t5 > $1/cores/$(basename $file .fasta).json
   fi
-  mkdir -p $1/variancedata  
-  if [ ! -f $1/variancedata/$(basename $file .fasta).json ]; then
-    if [ ! -f $1/variancedata/$(basename $file .fasta).bson ]; then
-      node core-to-variancedata.js  $1/cores/$(basename $file .fasta).json  $1/variancedata/$(basename $file .fasta).json  $1/variancedata/$(basename $file .fasta).bson
+  mkdir -p $1/variance  
+  if [ ! -f $1/variance/$(basename $file .fasta).json ]; then
+    if [ ! -f $1/variance/$(basename $file .fasta).bson ]; then
+      node core-to-variance.js  $1/cores/$(basename $file .fasta).json  $1/variance/$(basename $file .fasta).json  $1/variance/$(basename $file .fasta).bson
     fi
   fi
 done

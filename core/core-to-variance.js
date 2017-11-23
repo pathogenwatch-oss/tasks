@@ -10,7 +10,7 @@ const bson = new Bson();
 //   const core = JSON.parse(data);
 //   fs.writeFileSync(
 //     element.replace('.core.json', '.vd.json'),
-//     JSON.stringify(core.varianceData)
+//     JSON.stringify(core.variance)
 //   );
 // }
 
@@ -24,9 +24,9 @@ const data = fs.readFileSync(coreFile, 'utf8');
 const core = JSON.parse(data);
 fs.writeFileSync(
   jsonFile,
-  JSON.stringify(core.varianceData)
+  JSON.stringify(core.variance)
 );
 fs.writeFileSync(
   bsonFile,
-  bson.serialize(core.varianceData)
+  bson.serialize(core.variance)
 );
