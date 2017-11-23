@@ -1,6 +1,6 @@
 FROM node:8.1.4-alpine as node
 
-FROM registry.gitlab.com/cgps/wgsa-test-images/compare-profiles:0.0.3
+FROM registry.gitlab.com/cgps/wgsa-test-images/compare-profiles:0.0.5
 
 # Install R
 RUN apk add --no-cache R R-dev R-doc curl libressl-dev curl-dev libxml2-dev gcc g++ git coreutils bash ncurses &&\

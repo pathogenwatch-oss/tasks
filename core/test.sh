@@ -11,7 +11,7 @@ do
       docker run -i --rm \
         -e WGSA_ORGANISM_TAXID=1280 \
         -e WGSA_FILE_ID=`shasum $file | cut -d ' ' -f 1` \
-        registry.gitlab.com/cgps/wgsa-tasks/core:t2 > $1/cores/$(basename $file .fasta).json
+        registry.gitlab.com/cgps/wgsa-tasks/core:t5 > $1/cores/$(basename $file .fasta).json
   fi
   mkdir -p $1/variancedata  
   if [ ! -f $1/variancedata/$(basename $file .fasta).json ]; then
