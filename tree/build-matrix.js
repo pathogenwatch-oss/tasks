@@ -1,18 +1,20 @@
 const es = require('event-stream');
-const bs = require('bson-stream');
+const BsonStream = require('bson-stream');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const spawn = require('child_process').spawn;
 const mapLimit = require('async/mapLimit');
+const Bson = require('bson');
+
+const bson = new Bson();
 
 const dataPath = '.';
 const matrixFile = 'matrix.csv';
 
 const limit = process.env.WGSA_WORKERS || 1;
 
-let ids;
-let fileIds = [];
+const ids = [];
+const fileIds = [];
 const coreProfiles = [];
 const scoreCache = {};
 
@@ -28,24 +30,19 @@ function outputScores(input, vector) {
 function saveProfiles(stream) {
   return new Promise((resolve, reject) => {
     const startTime = process.hrtime();
-
     stream
-      .pipe(new bs())
+      .pipe(new BsonStream())
       .pipe(es.map((data, done) => {
         // console.error(data);
-        if (data.genomes) {
-          ids = data.genomes.map(x => x._id.toString());
-          fileIds = data.genomes.map(x => x.fileId);
-          done();
-        } else if (data.scores) {
+        if (data.scores) {
           scoreCache[data.fileId] = data.scores;
           done();
         } else {
-          const { variance } = data.results;
-          // fileIds.push(data.fileId);
-          const file = path.join(dataPath, `core-${ids[fileIds.indexOf(data.fileId)]}.json`);
+          ids.push(data._id);
+          fileIds.push(data.fileId);
+          const file = path.join(dataPath, `core-${data._id}.bson`);
           coreProfiles.push(file);
-          fs.writeFile(file, JSON.stringify(variance), done);
+          fs.writeFile(file, bson.serialize(data.analysis.core.variance), done);
         }
       }))
       .on('error', reject)
@@ -60,45 +57,37 @@ function saveProfiles(stream) {
 
 function compareProfiles(input, done) {
   const args = [
-    '-XX:+UnlockExperimentalVMOptions',
-    '-XX:+UseCGroupMemoryLimitForHeap',
-    '-jar',
-    '/core/compare-profiles.jar',
-    '-s',
-    '1280',
-    '-f',
-    input.map(index => path.join(dataPath, `core-${ids[index]}.json`)).join(','),
+    'compare-bson-data.js',
+    ...input.map(index => path.join(dataPath, `core-${ids[index]}.bson`)),
   ];
 
   const startTime = process.hrtime();
-  const child = spawn('java', args);
+  const child = spawn('node', args);
 
   const buffer = [];
-  child.stdout
-    .pipe(es.split())
-    .pipe(
-      es.map((data, mapDone) => {
-        if (data.length) {
-          buffer.push(JSON.parse(data).s);
-        }
-        mapDone();
-      })
-    );
+  child.stdout.on('data', (data) => {
+    buffer.push(data.toString());
+  });
+
+  const error = [];
+  child.stderr.on('data', (data) => {
+    error.push(data);
+  });
 
   child.on('close', (code) => {
     const [ durationS, durationNs ] = process.hrtime(startTime);
     const duration = Math.round(durationS * 1000 + durationNs / 1e6);
     console.error(input.length, duration, duration / input.length);
     if (code === 0) {
-      done(null, buffer);
+      done(null, buffer.join('').trim().split('\t'));
     } else {
-      const error = [];
-      child.stderr.on('data', (data) => {
-        error.push(data.toString());
-      });
-      child.stderr.on('close', () => {
+      if (child.stderr.readable) {
+        child.stderr.on('close', () => {
+          done({ code, error: error.join('\n') });
+        });
+      } else {
         done({ code, error: error.join('\n') });
-      });
+      }
     }
   });
 }
@@ -179,7 +168,7 @@ function buildTree(matrix) {
   });
 }
 
-Promise.resolve(process.stdin)
+Promise.resolve(process.argv.length === 2 ? process.stdin : fs.createReadStream(process.argv[2]))
   .then(saveProfiles)
   .then(buildMatrix)
   .then(buildTree)
