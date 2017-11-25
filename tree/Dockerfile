@@ -1,6 +1,6 @@
 FROM node:8.1.4-alpine as node
 
-FROM registry.gitlab.com/cgps/wgsa-test-images/compare-profiles:0.0.5 as java
+FROM registry.gitlab.com/cgps/wgsa-test-images/compare-profiles:0.0.3 as java
 
 FROM conoria/alpine-r
 
@@ -42,6 +42,8 @@ COPY --from=java /core/lib/ /core/lib/
 COPY --from=java /core/compare-profiles.jar /core/compare-profiles.jar
 
 COPY build-matrix.js /wgsa/build-matrix.js
+COPY compare-bson-data.js /wgsa/compare-bson-data.js
+COPY compare.js /wgsa/compare.js
 COPY node_modules/ /wgsa/node_modules/
 COPY create-tree.r /wgsa/create-tree.r
 COPY entrypoint.sh /wgsa/entrypoint.sh
