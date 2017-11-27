@@ -11,26 +11,25 @@ function getFilteredFamilyIds(query, subject) {
 }
 
 function getCommonIds(query, subject) {
-  // const filteredIds = getFilteredFamilyIds(query, subject);
+  const filteredIds = getFilteredFamilyIds(query, subject);
   const ids = [];
-  const queryProfileIds = Object.keys(query.core.profile).filter(x => !query.filter.filteredAlleles.map(y => y.familyId).includes(x));
+  const queryProfileIds = Object.keys(query.core.profile);
   for (let i = 0; i < queryProfileIds.length; i++) {
     if (!(queryProfileIds[i] in subject.core.profile)) continue;
-    if (subject.filter.filteredAlleles.map(y => y.familyId).includes(queryProfileIds[i])) continue;
-    // if (filteredIds.has(queryProfileIds[i])) continue;
+    if (filteredIds.has(queryProfileIds[i])) continue;
     ids.push(queryProfileIds[i]);
   }
   return ids;
 }
 
 function fastScore(differenceCount, sequenceCoordinates) {
-  // if (typeof differenceCount !== 'number' || isNaN(differenceCount)) {
-  //   throw new Error('NaN :(');
-  // }
-  // if (typeof sequenceCoordinates.start !== 'number' || typeof sequenceCoordinates.stop !== 'number') {
-  //   throw new Error('NaN :(');
-  // }
-  return [ differenceCount, Math.abs(sequenceCoordinates.start - sequenceCoordinates.stop) + 1 ];
+  if (typeof differenceCount !== 'number' || isNaN(differenceCount)) {
+    throw new Error('NaN :(');
+  }
+  if (typeof sequenceCoordinates.start !== 'number' || typeof sequenceCoordinates.stop !== 'number') {
+    throw new Error('NaN :(');
+  }
+  return { differenceCount, sequenceCoordinates };
 }
 
 function calculateReferenceRangeOverlap(queryRange, subjectRange) {
@@ -59,34 +58,43 @@ function calculateReferenceRangeOverlap(queryRange, subjectRange) {
   return { start: maxStart, stop: minStop };
 }
 
+function mutationsByRange(allele, range) {
+  const selectedMutations = {};
+
+  for (const key of Object.keys(allele.map)) {
+    const mutationPosition = parseInt(key, 10);
+    if (mutationPosition < range.start) {
+      continue;
+    }
+    if (range.stop < mutationPosition) {
+      break;
+    }
+    selectedMutations[key] = allele.map[key];
+  }
+
+  return selectedMutations;
+}
+
+function calculateDiff(queryMutations, subjectMutations) {
+  let shared = 0;
+
+  for (const queryKey of Object.keys(queryMutations)) {
+    if (queryKey in subjectMutations && queryMutations[queryKey] === subjectMutations[queryKey]) {
+      shared++;
+    }
+  }
+
+  return (Object.keys(queryMutations).length - shared) + (Object.keys(subjectMutations).length - shared);
+}
+
 function compareAlleles(queryAllele, subjectAllele) {
   if (queryAllele.alleleId === subjectAllele.alleleId) {
     return fastScore(0, queryAllele.referenceRange);
   }
-
   const overlap = calculateReferenceRangeOverlap(queryAllele.referenceRange, subjectAllele.referenceRange);
-
-  let queryMutations = 0;
-  let subjectMutations = 0;
-  let shared = 0;
-  for (const key of Object.keys(queryAllele.map)) {
-    const mutationPosition = parseInt(key, 10);
-    if (mutationPosition >= overlap.start && mutationPosition <= overlap.stop) {
-      queryMutations++;
-      if (key in subjectAllele.map) {
-        if (queryAllele.map[key] === subjectAllele.map[key]) {
-          shared++;
-        }
-      }
-    }
-  }
-  for (const key of Object.keys(subjectAllele.map)) {
-    const mutationPosition = parseInt(key, 10);
-    if (mutationPosition >= overlap.start && mutationPosition <= overlap.stop) {
-      subjectMutations++;
-    }
-  }
-  const differenceCount = (queryMutations - shared) + (subjectMutations - shared);
+  const queryMutations = mutationsByRange(queryAllele, overlap);
+  const subjectMutations = mutationsByRange(subjectAllele, overlap);
+  const differenceCount = calculateDiff(queryMutations, subjectMutations);
   return fastScore(differenceCount, overlap);
 }
 
@@ -110,6 +118,7 @@ function scoreFunction(queryAlleles, subjectAlleles) {
 
     for (const subjectAllele of subjectAlleles) {
       const score = compareAlleles(queryAllele, subjectAllele);
+
       // diffs[queryAllele.alleleId][subjectAllele.alleleId] = score.differenceCount;
       // overlaps[queryAllele.alleleId][subjectAllele.alleleId] = score.sequenceCoordinates;
       data[queryAllele.alleleId][subjectAllele.alleleId] = score;
@@ -130,7 +139,7 @@ function scoreFunction(queryAlleles, subjectAlleles) {
         continue;
       }
       for (const alleleId2 of Object.keys(data[alleleId1])) {
-        if (data[alleleId1][alleleId2][0] === minDiffs && !seenPair.has(alleleId2)) {
+        if (data[alleleId1][alleleId2].differenceCount === minDiffs && !seenPair.has(alleleId2)) {
           scores.push(data[alleleId1][alleleId2]);
           // Now ensure neither is used in another pairing.
           seenFirst.add(alleleId1);
@@ -148,21 +157,16 @@ function scoreFunction(queryAlleles, subjectAlleles) {
   return scores;
 }
 
-function compare(expectedKernelSize, query, subject) {
-  const queryProfile = query.core.profile;
-  const subjectProfile = subject.core.profile;
-  const intersection = getCommonIds(query, subject);
-
-  // let sharedLoci = 0.0;
+function scoreBuilder(expectedKernelSize, familyScores) {
+  // let sharedLoci = 0;
   let sharedNts = 0.0;
   let numDifferences = 0.0;
 
-  for (const familyId of intersection) {
-    const scores = scoreFunction(queryProfile[familyId], subjectProfile[familyId]);
+  for (const scores of familyScores) {
     for (const score of scores) {
       // sharedLoci++;
-      sharedNts += score[1];
-      numDifferences += score[0];
+      sharedNts += Math.abs(score.sequenceCoordinates.start - score.sequenceCoordinates.stop) + 1;
+      numDifferences += score.differenceCount;
     }
   }
 
@@ -179,6 +183,20 @@ function compare(expectedKernelSize, query, subject) {
     numDifferences /
     (sharedNts / expectedKernelSize) /* coverageRatio */
   );
+}
+
+function compare(expectedKernelSize, query, subject) {
+  const queryProfile = query.core.profile;
+  const subjectProfile = subject.core.profile;
+  const intersection = getCommonIds(query, subject);
+
+  const scores = intersection.map(
+    familyId => scoreFunction(queryProfile[familyId], subjectProfile[familyId])
+  );
+
+  const score = scoreBuilder(expectedKernelSize, scores);
+
+  return score;
 }
 
 module.exports = compare;
