@@ -174,22 +174,21 @@ func compare(expectedKernelSize int, query map[string][]Allele, subject map[stri
 	return int(math.Floor(score + 0.5))
 }
 
-func count(doc map[string]interface{}, i int, c chan int) {
-	time.Sleep(time.Second)
-	log.Println("index", i, len(doc))
-	c <- len(doc)
-}
-
-func vector(expectedKernelSize int, docs []Genome, queryIndex int) Vector {
+func vector(expectedKernelSize int, docs []Genome, cache  map[string]map[string]int, queryIndex int) Vector {
 	query := docs[queryIndex]
 
-	scores := make([]int, 0)
-
 	subjects := docs[:queryIndex]
+	scores := make([]int, len(subject))
+	
+	for index, subject := range subjects {
+		if cachedGenome, ok := cache[query.FileID]; ok {
+			if cachedScore, ok := cachedGenome[subject.FileID]; ok {
+				scores[index] = cachedScore
+				continue
+			}
+		}
 
-	for _, doc := range subjects {
-		score := compare(expectedKernelSize, query.Variances, doc.Variances)
-		scores = append(scores, score)
+		scores[index] = compare(expectedKernelSize, query.Variances, doc.Variances)
 	}
 
 	return Vector{
@@ -198,9 +197,9 @@ func vector(expectedKernelSize int, docs []Genome, queryIndex int) Vector {
 	}
 }
 
-func worker(expectedKernelSize int, docs []Genome, jobs <-chan int, results chan<- Vector) {
+func worker(expectedKernelSize int, docs []Genome, cache  map[string]map[string]int, jobs <-chan int, results chan<- Vector) {
 	for j := range jobs {
-		results <- vector(expectedKernelSize, docs, j)
+		results <- vector(expectedKernelSize, docs, cache, j)
 	}
 }
 
@@ -256,7 +255,7 @@ func output(genomes []Genome, matrix [][]int) {
 	}
 }
 
-func buildMatrix(expectedKernelSize int, workers int, genomes []Genome) [][]int {
+func buildMatrix(expectedKernelSize int, workers int, genomes []Genome, cache  map[string]map[string]int) [][]int {
 	numDocs := len(genomes)
 	log.Println(numDocs, expectedKernelSize)
 
@@ -264,7 +263,7 @@ func buildMatrix(expectedKernelSize int, workers int, genomes []Genome) [][]int 
 	results := make(chan Vector, numDocs*2)
 
 	for j := 0; j < workers; j++ {
-		go worker(expectedKernelSize, genomes, jobs, results)
+		go worker(expectedKernelSize, genomes, cache, jobs, results)
 	}
 
 	for i := 1; i < numDocs; i++ {
@@ -281,10 +280,11 @@ func buildMatrix(expectedKernelSize int, workers int, genomes []Genome) [][]int 
 	return matrix
 }
 
-func readDocs(r io.Reader) []Genome {
+func readDocs(r io.Reader) []Genome, map[string]map[string]int {
 	dec := bson.NewDecoder(os.Stdin)
 
 	docs := make([]Genome, 0)
+	cache := data := make(map[string]map[string]int)
 
 	for {
 		d := make(map[string]interface{})
@@ -293,9 +293,21 @@ func readDocs(r io.Reader) []Genome {
 			if err != io.EOF {
 				os.Exit(1)
 			}
-			return docs
+			return docs, cache
 		}
-		docs = append(docs, createGenome(d))
+		if _, ok := d["scores"]; ok {
+			fileId1 := d["fileId"].(string)
+			if _, ok := cache[fileId1]; !ok {
+				cache[fileId1] = make(map[string]int)
+			}
+			scores := d["scores"].(map[string]interface{})
+			for fileId2, score := range scores {
+				cache[fileId1][fileId2] = int(score.(int32))
+			}
+		} 
+		else {
+			docs = append(docs, createGenome(d))
+		}
 	}
 }
 
@@ -307,7 +319,7 @@ func main() {
 	log.Println(*workers, "workers", ",", "Kernel", *expectedKernelSize)
 
 	stream := os.Stdin
-	genomes := readDocs(stream)
-	matrix := buildMatrix(*expectedKernelSize, *workers, genomes)
+	genomes, cache := readDocs(stream)
+	matrix := buildMatrix(*expectedKernelSize, *workers, genomes, cache)
 	output(genomes, matrix)
 }
