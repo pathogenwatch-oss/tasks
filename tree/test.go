@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math"
@@ -23,31 +24,49 @@ type Vector struct {
 	Scores []string
 }
 
-func calculateRangeOverlap(query map[string]interface{}, subject map[string]interface{}) (int, int) {
-	queryStart := query["start"].(int32)
-	subjectStart := subject["start"].(int32)
-	queryStop := query["stop"].(int32)
-	subjectStop := subject["stop"].(int32)
-
-	maxStart := queryStart
-	if queryStart < subjectStart {
-		maxStart = subjectStart
-	}
-
-	minStop := queryStop
-	if queryStop > subjectStop {
-		minStop = subjectStop
-	}
-
-	return int(maxStart), int(minStop)
+type Mutation struct {
+	Location   int
+	Nucleotide string
 }
 
-func compareAlleles(queryAllele map[string]interface{}, subjectAllele map[string]interface{}) Score {
-	if queryAllele["alleleId"].(string) == subjectAllele["alleleId"].(string) {
+type Allele struct {
+	AlleleID  string
+	Stop      int
+	Start     int
+	Mutations []Mutation
+}
+
+type Variance struct {
+	FamilyID string
+	Alleles  []Allele
+}
+
+type Genome struct {
+	ID        string
+	FileID    string
+	Variances []Variance
+}
+
+func calculateRangeOverlap(query Allele, subject Allele) (int, int) {
+	maxStart := query.Start
+	if query.Start < subject.Start {
+		maxStart = subject.Start
+	}
+
+	minStop := query.Stop
+	if query.Stop > subject.Stop {
+		minStop = subject.Stop
+	}
+
+	return maxStart, minStop
+}
+
+func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
+	if queryAllele.AlleleID == subjectAllele.AlleleID {
 		return Score{
 			Diff:  0,
-			Start: int(queryAllele["start"].(int32)),
-			Stop:  int(queryAllele["stop"].(int32)),
+			Start: queryAllele.Start,
+			Stop:  queryAllele.Stop,
 		}
 	}
 	start, stop := calculateRangeOverlap(queryAllele, subjectAllele)
@@ -55,30 +74,22 @@ func compareAlleles(queryAllele map[string]interface{}, subjectAllele map[string
 	foundQueryMutations := 0
 	foundSubjectMutations := 0
 
-	queryMutations := queryAllele["mutations"].(map[string]interface{})
-	subjectMutations := subjectAllele["mutations"].(map[string]interface{})
-
-	for k, queryMutation := range queryMutations {
-		position, err := strconv.Atoi(k)
-		if err != nil {
-			panic(err)
-		}
-		if position >= start && position <= stop {
-			if subjectMutation, ok := subjectMutations[k]; ok {
-				if queryMutation == subjectMutation {
-					shared++
+	for _, queryMutation := range queryAllele.Mutations {
+		if queryMutation.Location >= start && queryMutation.Location <= stop {
+			for _, subjectMutation := range subjectAllele.Mutations {
+				if queryMutation.Location == subjectMutation.Location {
+					if queryMutation.Nucleotide == subjectMutation.Nucleotide {
+						shared++
+					}
+					break
 				}
 			}
 			foundQueryMutations++
 		}
 	}
 
-	for k := range subjectMutations {
-		position, err := strconv.Atoi(k)
-		if err != nil {
-			panic(err)
-		}
-		if position >= start && position <= stop {
+	for _, subjectMutation := range subjectAllele.Mutations {
+		if subjectMutation.Location >= start && subjectMutation.Location <= stop {
 			foundSubjectMutations++
 		}
 	}
@@ -90,12 +101,9 @@ func compareAlleles(queryAllele map[string]interface{}, subjectAllele map[string
 	}
 }
 
-func scoreFunction(queryAlleles []interface{}, subjectAlleles []interface{}) []Score {
+func scoreFunction(queryAlleles []Allele, subjectAlleles []Allele) []Score {
 	if len(queryAlleles) == 1 && len(subjectAlleles) == 1 {
-		score := compareAlleles(
-			queryAlleles[0].(map[string]interface{}),
-			subjectAlleles[0].(map[string]interface{}),
-		)
+		score := compareAlleles(queryAlleles[0], subjectAlleles[0])
 		return []Score{score}
 	}
 
@@ -105,13 +113,11 @@ func scoreFunction(queryAlleles []interface{}, subjectAlleles []interface{}) []S
 	}
 	data := make(map[string]map[string]Score)
 
-	for _, q := range queryAlleles {
-		queryAllele := q.(map[string]interface{})
-		data[queryAllele["alleleId"].(string)] = make(map[string]Score)
-		for _, s := range subjectAlleles {
-			subjectAllele := s.(map[string]interface{})
+	for _, queryAllele := range queryAlleles {
+		data[queryAllele.AlleleID] = make(map[string]Score)
+		for _, subjectAllele := range subjectAlleles {
 			score := compareAlleles(queryAllele, subjectAllele)
-			data[queryAllele["alleleId"].(string)][subjectAllele["alleleId"].(string)] = score
+			data[queryAllele.AlleleID][subjectAllele.AlleleID] = score
 		}
 	}
 
@@ -124,16 +130,16 @@ func scoreFunction(queryAlleles []interface{}, subjectAlleles []interface{}) []S
 	minDiffs := 0
 
 	for !allPaired {
-		for alleleId1 := range data {
-			if seenFirst[alleleId1] {
+		for alleleID1 := range data {
+			if seenFirst[alleleID1] {
 				continue
 			}
-			for alleleId2 := range data[alleleId1] {
-				if data[alleleId1][alleleId2].Diff == minDiffs && !seenPair[alleleId2] {
-					scores = append(scores, data[alleleId1][alleleId2])
+			for alleleID2 := range data[alleleID1] {
+				if data[alleleID1][alleleID2].Diff == minDiffs && !seenPair[alleleID2] {
+					scores = append(scores, data[alleleID1][alleleID2])
 					// Now ensure neither is used in another pairing.
-					seenFirst[alleleId1] = true
-					seenPair[alleleId2] = true
+					seenFirst[alleleID1] = true
+					seenPair[alleleID2] = true
 					break
 				}
 			}
@@ -147,17 +153,26 @@ func scoreFunction(queryAlleles []interface{}, subjectAlleles []interface{}) []S
 	return scores
 }
 
-func compare(expectedKernelSize int, query map[string]interface{}, subject map[string]interface{}, i int) int {
+func absDifference(a int, b int) int {
+	if a > b {
+		return a - b
+	}
+	return b - a
+}
+
+func compare(expectedKernelSize int, query []Variance, subject []Variance) int {
 	sharedNts := 0
 	numDifferences := 0
 
-	for familyId, queryAlleles := range query {
-		if subjectAlleles, ok := subject[familyId]; ok {
-			// log.Println(familyId, len(queryAlleles.([]interface{})), len(subjectAlleles.([]interface{})))
-			scores := scoreFunction(queryAlleles.([]interface{}), subjectAlleles.([]interface{}))
-			for _, score := range scores {
-				sharedNts += score.Stop - score.Start + 1
-				numDifferences += score.Diff
+	for _, queryVariance := range query {
+		for _, subjectVariance := range subject {
+			if queryVariance.FamilyID == subjectVariance.FamilyID {
+				scores := scoreFunction(queryVariance.Alleles, subjectVariance.Alleles)
+				for _, score := range scores {
+					sharedNts += absDifference(score.Stop, score.Start) + 1
+					numDifferences += score.Diff
+				}
+				break
 			}
 		}
 	}
@@ -181,66 +196,225 @@ func count(doc map[string]interface{}, i int, c chan int) {
 	c <- len(doc)
 }
 
-func vector(expectedKernelSize int, docs []map[string]interface{}, queryIndex int, c chan Vector) {
+func vector(expectedKernelSize int, docs []Genome, queryIndex int) Vector {
 	query := docs[queryIndex]
-	queryProfile := query["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
 
 	scores := make([]string, 0)
 
 	subjects := docs[:queryIndex]
 
-	for i, doc := range subjects {
-		subjectProfile := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
-		score := compare(expectedKernelSize, queryProfile, subjectProfile, i)
+	for _, doc := range subjects {
+		score := compare(expectedKernelSize, query.Variances, doc.Variances)
 		scores = append(scores, strconv.Itoa(score))
 	}
 
-	c <- Vector{
+	return Vector{
 		Index:  queryIndex,
 		Scores: scores,
 	}
 }
 
+func worker(expectedKernelSize int, docs []Genome, jobs <-chan int, results chan<- Vector) {
+	for j := range jobs {
+		results <- vector(expectedKernelSize, docs, j)
+	}
+}
+
+func createGenome(doc map[string]interface{}) Genome {
+	rawVariance := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
+	variances := make([]Variance, 0)
+	for k, v := range rawVariance {
+		rawAlleles := v.([]interface{})
+		alleles := make([]Allele, 0)
+		for _, allele := range rawAlleles {
+			rawAllele := allele.(map[string]interface{})
+			rawMutations := rawAllele["mutations"].(map[string]interface{})
+			mutations := make([]Mutation, 0)
+			for p, n := range rawMutations {
+				position, err := strconv.Atoi(p)
+				if err != nil {
+					panic(err)
+				}
+				mutations = append(mutations, Mutation{
+					Location:   position,
+					Nucleotide: n.(string),
+				})
+			}
+			alleles = append(alleles, Allele{
+				AlleleID:  rawAllele["alleleId"].(string),
+				Start:     int(rawAllele["start"].(int32)),
+				Stop:      int(rawAllele["stop"].(int32)),
+				Mutations: mutations,
+			})
+		}
+
+		variances = append(variances, Variance{
+			FamilyID: k,
+			Alleles:  alleles,
+		})
+	}
+	return Genome{
+		ID:        doc["_id"].(string),
+		FileID:    doc["fileId"].(string),
+		Variances: variances,
+	}
+}
+
+// func createGenome(doc map[string]interface{}) Genome {
+// 	rawVariance := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
+// 	variances := make([]Variance, 0)
+// 	for k, v := range rawVariance {
+// 		rawAlleles := v.([]interface{})
+// 		alleles := make([]Allele, 0)
+// 		for _, allele := range rawAlleles {
+// 			rawAllele := allele.(map[string]interface{})
+// 			rawMutations := rawAllele["mutations"].(map[string]interface{})
+// 			mutations := make([]Mutation, 0)
+// 			for p, n := range rawMutations {
+// 				position, err := strconv.Atoi(p)
+// 				if err != nil {
+// 					panic(err)
+// 				}
+// 				mutations = append(mutations, Mutation{
+// 					Location:   position,
+// 					Nucleotide: n.(string),
+// 				})
+// 			}
+// 			alleles = append(alleles, Allele{
+// 				AlleleID:  rawAllele["alleleId"].(string),
+// 				Start:     int(rawAllele["start"].(int32)),
+// 				Stop:      int(rawAllele["stop"].(int32)),
+// 				Mutations: mutations,
+// 			})
+// 		}
+
+// 		variances = append(variances, Variance{
+// 			FamilyID: k,
+// 			Alleles:  alleles,
+// 		})
+// 	}
+// 	return Genome{
+// 		ID:        doc["_id"].(string),
+// 		FileID:    doc["fileId"].(string),
+// 		Variances: variances,
+// 	}
+// }
+
 func main() {
 	expectedKernelSize := 1755637
 	dec := bson.NewDecoder(os.Stdin)
-	docs := make([]map[string]interface{}, 0)
+
+	// numDocs := flag.Int("size", 1, "Size of the matrix")
+	threads := flag.Int("threads", 2, "Number of threads to use")
+
+	flag.Parse()
+	log.Println(*threads, "threads")
+
+	docs := make([]Genome, 0)
+
 	for {
 		d := make(map[string]interface{})
 		if err := dec.Decode(&d); err != nil {
 			log.Println(err)
-			log.Println(len(docs), expectedKernelSize)
 
-			c := make(chan Vector)
-			threads := 16
+			numDocs := len(docs)
+			log.Println(numDocs, expectedKernelSize)
 
-			lines := make([]string, len(docs))
+			jobs := make(chan int, numDocs*2)
+			results := make(chan Vector, numDocs*2)
 
-			for i := 0; i < len(docs)-threads+1; i += threads {
-				for j := 0; j < threads; j++ {
-					if j+i < len(docs) {
-						go vector(expectedKernelSize, docs, i+j, c)
-					}
-				}
-				for j := 0; j < threads; j++ {
-					v := <-c
-					lines[v.Index] = strings.Join(v.Scores, "\t")
-					fmt.Println(v.Index)
-				}
+			for j := 0; j < *threads; j++ {
+				go worker(expectedKernelSize, docs, jobs, results)
 			}
 
-			ids := make([]string, len(docs))
+			for i := 1; i < numDocs; i++ {
+				jobs <- i
+			}
+			close(jobs)
+
+			lines := make([]string, numDocs)
+			for i := 1; i < numDocs; i++ {
+				v := <-results
+				lines[v.Index] = strings.Join(v.Scores, "\t")
+				log.Println("line inserted", v.Index)
+			}
+
+			ids := make([]string, numDocs)
 			for i, doc := range docs {
-				ids[i] = doc["_id"].(string)
+				ids[i] = doc.ID
 			}
-			fmt.Println("ID", strings.Join(ids, "\t"))
+			fmt.Println("ID\t" + strings.Join(ids, "\t"))
 
 			for i := range docs {
-				fmt.Println(ids[i], "\t", lines[i])
+				fmt.Println(ids[i] + "\t" + lines[i])
 			}
 
 			return
 		}
-		docs = append(docs, d)
+		docs = append(docs, createGenome(d))
 	}
 }
+
+// func main() {
+// 	expectedKernelSize := 1755637
+
+// 	f, err := os.Open("../../../bson-testing/new-tree-input.bson")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	dec := bson.NewDecoder(f)
+
+// 	// numDocs := flag.Int("size", 1, "Size of the matrix")
+// 	threads := flag.Int("threads", 2, "Number of threads to use")
+
+// 	flag.Parse()
+// 	fmt.Println(*threads, "threads")
+
+// 	docs := make([]Genome, 0)
+
+// 	for {
+// 		d := make(map[string]interface{})
+// 		if err := dec.Decode(&d); err != nil {
+// 			log.Println(err)
+
+// 			numDocs := len(docs)
+// 			log.Println(numDocs, expectedKernelSize)
+
+// 			// jobs := make(chan int, numDocs*2)
+// 			// results := make(chan Vector, numDocs*2)
+
+// 			// for j := 0; j < *threads; j++ {
+// 			// 	go worker(expectedKernelSize, docs, jobs, results)
+// 			// }
+
+// 			// for i := 1; i < numDocs; i++ {
+// 			// 	jobs <- i
+// 			// }
+// 			// close(jobs)
+
+// 			// lines := make([]string, numDocs)
+// 			// for i := 53; i < numDocs; i++ {
+// 			// 	v := vector(expectedKernelSize, docs, i)
+// 			// 	lines[v.Index] = strings.Join(v.Scores, "\t")
+// 			// 	fmt.Println("line inserted", v.Index)
+// 			// }
+
+// 			// ids := make([]string, numDocs)
+// 			// for i, doc := range docs {
+// 			// 	ids[i] = doc.ID
+// 			// 	fmt.Println(ids)
+// 			// }
+// 			// fmt.Println("ID", strings.Join(ids, "\t"))
+
+// 			// for i := range docs {
+// 			// 	fmt.Println(ids[i], "\t", lines[i])
+// 			// }
+
+// 			fmt.Print(compare(expectedKernelSize, docs[50].Variances, docs[49].Variances))
+
+// 			return
+// 		}
+// 		docs = append(docs, createGenome(d))
+// 	}
+// }
