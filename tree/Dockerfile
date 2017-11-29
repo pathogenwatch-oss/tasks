@@ -1,9 +1,8 @@
 FROM golang:1.9-alpine as go
 
-COPY build-matrix.go /wgsa/build-matrix.go
-
 RUN apk add --update git
 RUN go get github.com/pkg/bson
+COPY build-matrix.go /wgsa/build-matrix.go
 RUN cd /wgsa && go build /wgsa/build-matrix.go
 RUN chmod +x /wgsa/build-matrix
 
@@ -14,8 +13,8 @@ RUN echo "install.packages('ape', repos='http://cran.ma.imperial.ac.uk')" | /usr
     echo "install.packages('phangorn', repos='http://cran.ma.imperial.ac.uk')" | /usr/bin/R --vanilla &&\
     echo "install.packages('jsonlite', repos='http://cran.ma.imperial.ac.uk')" | /usr/bin/R --vanilla
 
-COPY --from=go /wgsa/build-matrix /wgsa/build-matrix
 COPY create-tree.r /wgsa/create-tree.r
+COPY --from=go /wgsa/build-matrix /wgsa/build-matrix
 COPY entrypoint.sh /wgsa/entrypoint.sh
 
 WORKDIR /wgsa

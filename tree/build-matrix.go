@@ -230,8 +230,9 @@ func createGenome(doc map[string]interface{}) Genome {
 
 		variances[k] = alleles
 	}
+	_id := doc["_id"].(bson.ObjectId)
 	return Genome{
-		ID:        doc["_id"].(string),
+		ID:        fmt.Sprintf("%x", _id),
 		FileID:    doc["fileId"].(string),
 		Variances: variances,
 	}
