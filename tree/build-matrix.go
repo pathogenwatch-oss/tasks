@@ -37,18 +37,25 @@ type Genome struct {
 	Variances map[string][]Allele
 }
 
-func calculateRangeOverlap(query Allele, subject Allele) (int, int) {
-	maxStart := query.Start
-	if query.Start < subject.Start {
-		maxStart = subject.Start
+func absDifference(a int, b int) int {
+	if a > b {
+		return a - b
 	}
+	return b - a
+}
 
-	minStop := query.Stop
-	if query.Stop > subject.Stop {
-		minStop = subject.Stop
+func minInt(a int, b int) int {
+	if a < b {
+		return a
 	}
+	return b
+}
 
-	return maxStart, minStop
+func maxInt(a int, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
@@ -59,7 +66,8 @@ func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
 			Stop:  queryAllele.Stop,
 		}
 	}
-	start, stop := calculateRangeOverlap(queryAllele, subjectAllele)
+	start := maxInt(queryAllele.Start, subjectAllele.Start)
+	stop := minInt(queryAllele.Stop, subjectAllele.Stop)
 	shared := 0
 	foundQueryMutations := 0
 	foundSubjectMutations := 0
@@ -138,13 +146,6 @@ func scoreFunction(queryAlleles []Allele, subjectAlleles []Allele) []Score {
 	}
 
 	return scores
-}
-
-func absDifference(a int, b int) int {
-	if a > b {
-		return a - b
-	}
-	return b - a
 }
 
 func compare(expectedKernelSize int, query map[string][]Allele, subject map[string][]Allele) int {
