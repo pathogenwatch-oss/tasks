@@ -39,8 +39,9 @@ type Vector struct {
 }
 
 type CacheOutput struct {
-	FileID string         `json:"fileId"`
-	Scores map[string]int `json:"scores"`
+	FileID   string         `json:"fileId"`
+	Scores   map[string]int `json:"scores"`
+	Progress float32
 }
 
 func absDifference(a int, b int) int {
@@ -292,13 +293,16 @@ func buildMatrix(expectedKernelSize int, workers int, genomes []Genome, cache ma
 	for i := 1; i < numDocs; i++ {
 		v := <-results
 		matrix[v.Index] = v.Scores
-		cahcedScores := make(map[string]int)
+		cachedScores := make(map[string]int)
 		for j, score := range v.Scores {
-			cahcedScores[genomes[j].FileID] = score
+			cachedScores[genomes[j].FileID] = score
 		}
+		index := float32(v.Index + 1)
+		total := float32(numDocs)
 		enc.Encode(CacheOutput{
-			FileID: genomes[v.Index].FileID,
-			Scores: cahcedScores,
+			FileID:   genomes[v.Index].FileID,
+			Scores:   cachedScores,
+			Progress: ((index * index) - index) / ((total * total) - total) * 100,
 		})
 		// log.Println("line inserted", v.Index)
 	}
