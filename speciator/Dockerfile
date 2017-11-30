@@ -15,6 +15,8 @@ RUN apk add --update --no-cache --virtual build-deps \
       npm install --production && \
     apk del --purge build-deps
 
+RUN chmod +x /opt/wgsa/index.sh
+
 WORKDIR /opt/wgsa
 
 CMD [ "sh", "/opt/wgsa/index.sh" ]
