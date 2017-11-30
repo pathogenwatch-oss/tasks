@@ -36,4 +36,4 @@ arbol_mid = midpoint(arbol)
 
 # Save Newick file
 newick <- write.tree(arbol_mid, append = FALSE, digits = 10, tree.names = FALSE)
-jsonlite::toJSON(list(tree = newick), auto_unbox = TRUE)
+jsonlite::toJSON(list(newick = newick), auto_unbox = TRUE)

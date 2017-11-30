@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -13,17 +14,6 @@ import (
 	"github.com/pkg/bson"
 )
 
-type Score struct {
-	Diff  int
-	Start int
-	Stop  int
-}
-
-type Vector struct {
-	Index  int
-	Scores []int
-}
-
 type Allele struct {
 	AlleleID  string
 	Stop      int
@@ -35,6 +25,22 @@ type Genome struct {
 	ID        string
 	FileID    string
 	Variances map[string][]Allele
+}
+
+type Score struct {
+	Diff  int
+	Start int
+	Stop  int
+}
+
+type Vector struct {
+	Index  int
+	Scores []int
+}
+
+type CacheOutput struct {
+	FileID string         `json:"fileId"`
+	Scores map[string]int `json:"scores"`
 }
 
 func absDifference(a int, b int) int {
@@ -56,6 +62,12 @@ func maxInt(a int, b int) int {
 		return a
 	}
 	return b
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
 }
 
 func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
@@ -215,9 +227,7 @@ func createGenome(doc map[string]interface{}) Genome {
 			mutations := make(map[int]string)
 			for p, n := range rawMutations {
 				position, err := strconv.Atoi(p)
-				if err != nil {
-					panic(err)
-				}
+				check(err)
 				mutations[position] = n.(string)
 			}
 			alleles = append(alleles, Allele{
@@ -239,12 +249,16 @@ func createGenome(doc map[string]interface{}) Genome {
 }
 
 func output(genomes []Genome, matrix [][]int) {
+	file, err := os.Create("matrix.csv")
+	check(err)
+
 	ids := make([]string, len(genomes)+1)
 	ids[0] = "ID"
 	for i, doc := range genomes {
 		ids[i+1] = doc.ID
 	}
-	fmt.Println(strings.Join(ids, "\t"))
+	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
+	check(writeErr1)
 
 	for i := range genomes {
 		line := make([]string, len(matrix[i])+1)
@@ -252,7 +266,8 @@ func output(genomes []Genome, matrix [][]int) {
 		for j, cell := range matrix[i] {
 			line[j+1] = strconv.Itoa(cell)
 		}
-		fmt.Println(strings.Join(line, "\t"))
+		_, writeErr2 := file.WriteString(strings.Join(line, "\t") + "\n")
+		check(writeErr2)
 	}
 }
 
@@ -271,10 +286,20 @@ func buildMatrix(expectedKernelSize int, workers int, genomes []Genome, cache ma
 	}
 	close(jobs)
 
+	enc := json.NewEncoder(os.Stdout)
+
 	matrix := make([][]int, numDocs)
 	for i := 1; i < numDocs; i++ {
 		v := <-results
 		matrix[v.Index] = v.Scores
+		cahcedScores := make(map[string]int)
+		for j, score := range v.Scores {
+			cahcedScores[genomes[j].FileID] = score
+		}
+		enc.Encode(CacheOutput{
+			FileID: genomes[v.Index].FileID,
+			Scores: cahcedScores,
+		})
 		// log.Println("line inserted", v.Index)
 	}
 	return matrix
