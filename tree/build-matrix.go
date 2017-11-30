@@ -41,7 +41,7 @@ type Vector struct {
 type CacheOutput struct {
 	FileID   string         `json:"fileId"`
 	Scores   map[string]int `json:"scores"`
-	Progress float32
+	Progress float32        `json:"progress"`
 }
 
 func absDifference(a int, b int) int {
