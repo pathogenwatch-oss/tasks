@@ -24,7 +24,7 @@ type Allele struct {
 type Genome struct {
 	ID        string
 	FileID    string
-	Variances map[string][]Allele
+	Variances *map[string][]Allele
 }
 
 type Score struct {
@@ -42,6 +42,13 @@ type CacheOutput struct {
 	FileID   string         `json:"fileId"`
 	Scores   map[string]int `json:"scores"`
 	Progress float32        `json:"progress"`
+}
+
+type Context struct {
+	Genomes      []Genome
+	GenomeByID   map[string]Genome
+	VarianceData map[string]map[string][]Allele
+	ScoreCache   map[string]map[string]int
 }
 
 func absDifference(a int, b int) int {
@@ -187,21 +194,20 @@ func compare(expectedKernelSize int, query map[string][]Allele, subject map[stri
 	return int(math.Floor(score + 0.5))
 }
 
-func vector(expectedKernelSize int, docs []Genome, cache map[string]map[string]int, queryIndex int) Vector {
-	query := docs[queryIndex]
-
-	subjects := docs[:queryIndex]
+func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
+	query := context.Genomes[queryIndex]
+	subjects := context.Genomes[:queryIndex]
 	scores := make([]int, len(subjects))
 
 	for index, subject := range subjects {
-		if cachedGenome, ok := cache[query.FileID]; ok {
+		if cachedGenome, ok := context.ScoreCache[query.FileID]; ok {
 			if cachedScore, ok := cachedGenome[subject.FileID]; ok {
 				scores[index] = cachedScore
 				continue
 			}
 		}
 
-		scores[index] = compare(expectedKernelSize, query.Variances, subject.Variances)
+		scores[index] = compare(expectedKernelSize, context.VarianceData[query.ID], context.VarianceData[subject.ID])
 	}
 
 	return Vector{
@@ -210,13 +216,20 @@ func vector(expectedKernelSize int, docs []Genome, cache map[string]map[string]i
 	}
 }
 
-func worker(expectedKernelSize int, docs []Genome, cache map[string]map[string]int, jobs <-chan int, results chan<- Vector) {
+func worker(expectedKernelSize int, context Context, jobs <-chan int, results chan<- Vector) {
 	for j := range jobs {
-		results <- vector(expectedKernelSize, docs, cache, j)
+		results <- vector(expectedKernelSize, context, j)
 	}
 }
 
 func createGenome(doc map[string]interface{}) Genome {
+	return Genome{
+		ID:     fmt.Sprintf("%x", doc["_id"].(bson.ObjectId)),
+		FileID: doc["fileId"].(string),
+	}
+}
+
+func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 	rawVariance := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
 	variances := make(map[string][]Allele)
 	for k, v := range rawVariance {
@@ -241,27 +254,23 @@ func createGenome(doc map[string]interface{}) Genome {
 
 		variances[k] = alleles
 	}
-	_id := doc["_id"].(bson.ObjectId)
-	return Genome{
-		ID:        fmt.Sprintf("%x", _id),
-		FileID:    doc["fileId"].(string),
-		Variances: variances,
-	}
+	return variances
 }
 
-func output(genomes []Genome, matrix [][]int) {
+func outputMatrix(context Context, matrix [][]int) {
 	file, err := os.Create("matrix.csv")
 	check(err)
 
-	ids := make([]string, len(genomes)+1)
+	ids := make([]string, len(context.Genomes)+1)
 	ids[0] = "ID"
-	for i, doc := range genomes {
+	for i, doc := range context.Genomes {
 		ids[i+1] = doc.ID
+		ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
 	check(writeErr1)
 
-	for i := range genomes {
+	for i := range context.Genomes {
 		line := make([]string, len(matrix[i])+1)
 		line[0] = ids[i+1]
 		for j, cell := range matrix[i] {
@@ -272,14 +281,14 @@ func output(genomes []Genome, matrix [][]int) {
 	}
 }
 
-func buildMatrix(expectedKernelSize int, workers int, genomes []Genome, cache map[string]map[string]int) [][]int {
-	numDocs := len(genomes)
+func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
+	numDocs := len(context.Genomes)
 
 	jobs := make(chan int, numDocs*2)
 	results := make(chan Vector, numDocs*2)
 
 	for j := 0; j < workers; j++ {
-		go worker(expectedKernelSize, genomes, cache, jobs, results)
+		go worker(expectedKernelSize, context, jobs, results)
 	}
 
 	for i := 1; i < numDocs; i++ {
@@ -295,24 +304,27 @@ func buildMatrix(expectedKernelSize int, workers int, genomes []Genome, cache ma
 		matrix[v.Index] = v.Scores
 		cachedScores := make(map[string]int)
 		for j, score := range v.Scores {
-			cachedScores[genomes[j].FileID] = score
+			if _, found := context.ScoreCache[context.Genomes[v.Index].FileID][context.Genomes[j].FileID]; !found {
+				cachedScores[context.Genomes[j].FileID] = score
+			}
 		}
 		index := float32(v.Index + 1)
 		total := float32(numDocs)
 		enc.Encode(CacheOutput{
-			FileID:   genomes[v.Index].FileID,
+			FileID:   context.Genomes[v.Index].FileID,
 			Scores:   cachedScores,
 			Progress: ((index * index) - index) / ((total * total) - total) * 100,
 		})
-		// log.Println("line inserted", v.Index)
 	}
 	return matrix
 }
 
-func readDocs(r io.Reader) ([]Genome, map[string]map[string]int) {
-	dec := bson.NewDecoder(os.Stdin)
+func readInputDocs(r io.Reader) Context {
+	dec := bson.NewDecoder(r)
 
-	docs := make([]Genome, 0)
+	genomes := make([]Genome, 0)
+	docByID := make(map[string]Genome)
+	varianceData := make(map[string]map[string][]Allele)
 	cache := make(map[string]map[string]int)
 
 	for {
@@ -322,19 +334,37 @@ func readDocs(r io.Reader) ([]Genome, map[string]map[string]int) {
 			if err != io.EOF {
 				os.Exit(1)
 			}
-			return docs, cache
+			return Context{
+				Genomes:      genomes,
+				GenomeByID:   docByID,
+				VarianceData: varianceData,
+				ScoreCache:   cache,
+			}
 		}
-		if _, ok := d["scores"]; ok {
-			fileId1 := d["fileId"].(string)
-			if _, ok := cache[fileId1]; !ok {
-				cache[fileId1] = make(map[string]int)
+		if _, ok := d["genomes"]; ok {
+			for _, rawDoc := range d["genomes"].([]interface{}) {
+				doc := rawDoc.(map[string]interface{})
+				genomeDoc := Genome{
+					ID:     fmt.Sprintf("%x", doc["_id"].(bson.ObjectId)),
+					FileID: doc["fileId"].(string),
+				}
+				docByID[genomeDoc.ID] = genomeDoc
+				genomes = append(genomes, genomeDoc)
+			}
+		} else if _, ok := d["scores"]; ok {
+			fileID1 := d["fileId"].(string)
+			if _, ok := cache[fileID1]; !ok {
+				cache[fileID1] = make(map[string]int)
 			}
 			scores := d["scores"].(map[string]interface{})
-			for fileId2, score := range scores {
-				cache[fileId1][fileId2] = int(score.(int32))
+			for fileID2, score := range scores {
+				cache[fileID1][fileID2] = int(score.(int32))
 			}
+		} else if _, ok := d["analysis"]; ok {
+			id := fmt.Sprintf("%x", d["_id"].(bson.ObjectId))
+			varianceData[id] = createGenomeVariance(d)
 		} else {
-			docs = append(docs, createGenome(d))
+			panic("Invalid input doc")
 		}
 	}
 }
@@ -347,7 +377,7 @@ func main() {
 	log.Println("workers=", *workers, ",", "Expected kernel size=", *expectedKernelSize)
 
 	stream := os.Stdin
-	genomes, cache := readDocs(stream)
-	matrix := buildMatrix(*expectedKernelSize, *workers, genomes, cache)
-	output(genomes, matrix)
+	context := readInputDocs(stream)
+	matrix := buildMatrix(*expectedKernelSize, *workers, context)
+	outputMatrix(context, matrix)
 }
