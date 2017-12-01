@@ -71,23 +71,58 @@ function mergeMatches(paar = {}, snpar = {}) {
   return matches;
 }
 
+function getMechanismsByAgent(completeSets, partialSets) {
+  const mechanismsByAgent = {};
+
+  for (const { elementIds, effect, agents } of completeSets) {
+    for (const element of elementIds) {
+      for (const agent of agents) {
+        const mechanisms = mechanismsByAgent[agent] || [];
+        mechanisms.push({ name: element, effect })
+        mechanismsByAgent[agent] = mechanisms;
+      }
+    }
+  }
+  for (const { elementIds, effect, agents } of partialSets) {
+    for (const element of elementIds) {
+      for (const agent of agents) {
+        const mechanisms = mechanismsByAgent[agent] || [];
+        mechanisms.push({ name: element, effect })
+        mechanismsByAgent[agent] = mechanisms;
+      }
+    }
+  }
+
+  return mechanismsByAgent;
+}
+
+function formatResistanceProfile({ resistanceProfile, paarResult, snparResult }) {
+  const paar = getMechanismsByAgent(
+    paarResult.completeResistanceSets,
+    paarResult.partialResistanceSets
+  );
+  const snp = getMechanismsByAgent(
+    snparResult.completeSets,
+    snparResult.partialSets
+  );
+
+  const profile = [];
+  for (const { agent, resistanceState } of resistanceProfile) {
+    profile.push({
+      agent: agent.name,
+      name: agent.fullName,
+      type: agent.type,
+      state: resistanceState,
+      genes: paar[agent.name],
+      snps: snp[agent.name],
+    });
+  }
+  return profile;
+}
+
 function format(result) {
   return {
-    antibiotics: result.resistanceProfile ?
-    result.resistanceProfile.map(
-      ({ agent, resistanceState, resistanceSets }) => ({
-        name: agent.name,
-        fullName: agent.fullName,
-        state: resistanceState,
-        mechanisms: resistanceSets.reduce(
-          (memo, _) => memo.concat(_.elementIds), []
-        ),
-      })
-    ) : [],
-    paar: result.paarResult ?
-      result.paarResult.paarElementIds || [] : [],
-    snp: result.snparResult ?
-      result.snparResult.resistanceMutationIds || [] : [],
+    profile: formatResistanceProfile(result),
     matches: mergeMatches(result.paarResult, result.snparResult),
   };
 }
