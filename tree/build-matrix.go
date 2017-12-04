@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -28,9 +29,8 @@ type Genome struct {
 }
 
 type Score struct {
-	Diff  int
-	Start int
-	Stop  int
+	Diff   int
+	Length int
 }
 
 type Vector struct {
@@ -49,6 +49,24 @@ type Context struct {
 	GenomeByID   map[string]Genome
 	VarianceData map[string]map[string][]Allele
 	ScoreCache   map[string]map[string]int
+}
+
+type PairedScore struct {
+	Allele1 string
+	Allele2 string
+	Score   Score
+}
+
+type ByDiff []PairedScore
+
+func (s ByDiff) Len() int {
+	return len(s)
+}
+func (s ByDiff) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s ByDiff) Less(i, j int) bool {
+	return s[i].Score.Diff < s[j].Score.Diff
 }
 
 func absDifference(a int, b int) int {
@@ -81,9 +99,8 @@ func check(e error) {
 func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
 	if queryAllele.AlleleID == subjectAllele.AlleleID {
 		return Score{
-			Diff:  0,
-			Start: queryAllele.Start,
-			Stop:  queryAllele.Stop,
+			Diff:   0,
+			Length: absDifference(queryAllele.Stop, queryAllele.Start) + 1,
 		}
 	}
 	start := maxInt(queryAllele.Start, subjectAllele.Start)
@@ -110,9 +127,8 @@ func compareAlleles(queryAllele Allele, subjectAllele Allele) Score {
 	}
 
 	return Score{
-		Diff:  (foundQueryMutations - shared) + (foundSubjectMutations - shared),
-		Start: int(start),
-		Stop:  int(stop),
+		Diff:   (foundQueryMutations - shared) + (foundSubjectMutations - shared),
+		Length: absDifference(stop, start) + 1,
 	}
 }
 
@@ -122,47 +138,35 @@ func scoreFunction(queryAlleles []Allele, subjectAlleles []Allele) []Score {
 		return []Score{score}
 	}
 
-	sharedCount := len(queryAlleles)
-	if len(queryAlleles) > len(subjectAlleles) {
-		sharedCount = len(subjectAlleles)
-	}
-	data := make(map[string]map[string]Score)
+	sharedCount := minInt(len(queryAlleles), len(subjectAlleles))
+	data := make([]PairedScore, 0)
 
 	for _, queryAllele := range queryAlleles {
-		data[queryAllele.AlleleID] = make(map[string]Score)
 		for _, subjectAllele := range subjectAlleles {
 			score := compareAlleles(queryAllele, subjectAllele)
-			data[queryAllele.AlleleID][subjectAllele.AlleleID] = score
+			data = append(data, PairedScore{
+				Allele1: queryAllele.AlleleID,
+				Allele2: subjectAllele.AlleleID,
+				Score:   score,
+			})
 		}
 	}
+	sort.Sort(ByDiff(data))
 
-	// Got all diff scores, so now pair up by using greedy pair wise approach
-	allPaired := false
-	seenPair := make(map[string]bool)
-	seenFirst := make(map[string]bool)
+	seen1 := make(map[string]bool)
+	seen2 := make(map[string]bool)
 	scores := make([]Score, 0)
 
-	minDiffs := 0
-
-	for !allPaired {
-		for alleleID1 := range data {
-			if seenFirst[alleleID1] {
-				continue
-			}
-			for alleleID2 := range data[alleleID1] {
-				if data[alleleID1][alleleID2].Diff == minDiffs && !seenPair[alleleID2] {
-					scores = append(scores, data[alleleID1][alleleID2])
-					// Now ensure neither is used in another pairing.
-					seenFirst[alleleID1] = true
-					seenPair[alleleID2] = true
-					break
-				}
-			}
+	for _, pair := range data {
+		if seen1[pair.Allele1] || seen2[pair.Allele2] {
+			continue
 		}
-		minDiffs++
-		if len(seenFirst) == sharedCount {
-			allPaired = true // last pair seen
+		scores = append(scores, pair.Score)
+		if len(scores) == sharedCount {
+			break
 		}
+		seen1[pair.Allele1] = true
+		seen2[pair.Allele2] = true
 	}
 
 	return scores
@@ -176,7 +180,7 @@ func compare(expectedKernelSize int, query map[string][]Allele, subject map[stri
 		if subjectVariance, ok := subject[queryFamilyID]; ok {
 			scores := scoreFunction(queryVariance, subjectVariance)
 			for _, score := range scores {
-				sharedNts += absDifference(score.Stop, score.Start) + 1
+				sharedNts += score.Length
 				numDifferences += score.Diff
 			}
 		}
@@ -265,7 +269,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
 		ids[i+1] = doc.ID
-		ids[i+1] = strconv.Itoa(i)
+		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
 	check(writeErr1)
