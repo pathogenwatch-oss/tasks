@@ -34,15 +34,24 @@ function saveProfiles(stream) {
       .pipe(new BsonStream())
       .pipe(es.map((data, done) => {
         // console.error(data);
-        if (data.scores) {
+        if (data.genomes) {
+          for (const genome of data.genomes) {
+            ids.push(genome._id.toString());
+            fileIds.push(genome.fileId);
+          }
+        } else if (data.scores) {
           scoreCache[data.fileId] = data.scores;
           done();
         } else {
-          ids.push(data._id);
-          fileIds.push(data.fileId);
-          const file = path.join(dataPath, `core-${data._id}.bson`);
+          // ids.push(data._id);
+          // fileIds.push(data.fileId);
+          const file = path.join(dataPath, `core-${data._id.toString()}.bson`);
           coreProfiles.push(file);
+          console.error('writing file', file, data.fileId);
           fs.writeFile(file, bson.serialize(data.analysis.core.variance), done);
+          if (data.fileId === '63') {
+            resolve({ ids, coreProfiles });
+          }
         }
       }))
       .on('error', reject)

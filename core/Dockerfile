@@ -1,6 +1,6 @@
 FROM node:8-slim as node
 
-FROM registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.5
+FROM registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.8
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 

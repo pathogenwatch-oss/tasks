@@ -320,6 +320,7 @@ func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
 }
 
 func readInputDocs(r io.Reader) Context {
+	log.Println("Reading docs...")
 	dec := bson.NewDecoder(r)
 
 	genomes := make([]Genome, 0)
@@ -334,6 +335,8 @@ func readInputDocs(r io.Reader) Context {
 			if err != io.EOF {
 				os.Exit(1)
 			}
+			log.Println("")
+			log.Println("Read all docs")
 			return Context{
 				Genomes:      genomes,
 				GenomeByID:   docByID,
@@ -351,6 +354,7 @@ func readInputDocs(r io.Reader) Context {
 				docByID[genomeDoc.ID] = genomeDoc
 				genomes = append(genomes, genomeDoc)
 			}
+			log.Println("Read genomes doc of size", len(genomes))
 		} else if _, ok := d["scores"]; ok {
 			fileID1 := d["fileId"].(string)
 			if _, ok := cache[fileID1]; !ok {
@@ -360,9 +364,11 @@ func readInputDocs(r io.Reader) Context {
 			for fileID2, score := range scores {
 				cache[fileID1][fileID2] = int(score.(int32))
 			}
+			log.Println("Read score cache doc of size", len(cache[fileID1]), len(cache))
 		} else if _, ok := d["analysis"]; ok {
 			id := fmt.Sprintf("%x", d["_id"].(bson.ObjectId))
 			varianceData[id] = createGenomeVariance(d)
+			log.Println("Read variance data doc of size", len(varianceData[id]), len(varianceData))
 		} else {
 			panic("Invalid input doc")
 		}
@@ -377,6 +383,8 @@ func main() {
 	log.Println("workers=", *workers, ",", "Expected kernel size=", *expectedKernelSize)
 
 	stream := os.Stdin
+	// stream, err := os.Open("/Users/kad/Downloads/fasta/harris-et-al-2013/t3/tree-input-1-simons.bson")
+	// check(err)
 	context := readInputDocs(stream)
 	matrix := buildMatrix(*expectedKernelSize, *workers, context)
 	outputMatrix(context, matrix)

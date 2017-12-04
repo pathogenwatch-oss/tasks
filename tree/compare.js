@@ -13,24 +13,24 @@ function getFilteredFamilyIds(query, subject) {
 function getCommonIds(query, subject) {
   // const filteredIds = getFilteredFamilyIds(query, subject);
   const ids = [];
-  const queryProfileIds = Object.keys(query.core.profile).filter(x => !query.filter.filteredAlleles.map(y => y.familyId).includes(x));
+  const queryProfileIds = Object.keys(query); // .filter(x => !query.filter.filteredAlleles.mutations(y => y.familyId).includes(x));
   for (let i = 0; i < queryProfileIds.length; i++) {
-    if (!(queryProfileIds[i] in subject.core.profile)) continue;
-    if (subject.filter.filteredAlleles.map(y => y.familyId).includes(queryProfileIds[i])) continue;
+    if (!(queryProfileIds[i] in subject)) continue;
+    // if (subject.filter.filteredAlleles.mutations(y => y.familyId).includes(queryProfileIds[i])) continue;
     // if (filteredIds.has(queryProfileIds[i])) continue;
     ids.push(queryProfileIds[i]);
   }
   return ids;
 }
 
-function fastScore(differenceCount, sequenceCoordinates) {
+function fastScore(differenceCount, start, stop) {
   // if (typeof differenceCount !== 'number' || isNaN(differenceCount)) {
   //   throw new Error('NaN :(');
   // }
   // if (typeof sequenceCoordinates.start !== 'number' || typeof sequenceCoordinates.stop !== 'number') {
   //   throw new Error('NaN :(');
   // }
-  return [ differenceCount, Math.abs(sequenceCoordinates.start - sequenceCoordinates.stop) + 1 ];
+  return [ differenceCount, Math.abs(start - stop) + 1 ];
 }
 
 function calculateReferenceRangeOverlap(queryRange, subjectRange) {
@@ -61,26 +61,26 @@ function calculateReferenceRangeOverlap(queryRange, subjectRange) {
 
 function compareAlleles(queryAllele, subjectAllele) {
   if (queryAllele.alleleId === subjectAllele.alleleId) {
-    return fastScore(0, queryAllele.referenceRange);
+    return fastScore(0, queryAllele.start, queryAllele.stop);
   }
 
-  const overlap = calculateReferenceRangeOverlap(queryAllele.referenceRange, subjectAllele.referenceRange);
+  const overlap = calculateReferenceRangeOverlap(queryAllele, subjectAllele);
 
   let queryMutations = 0;
   let subjectMutations = 0;
   let shared = 0;
-  for (const key of Object.keys(queryAllele.map)) {
+  for (const key of Object.keys(queryAllele.mutations)) {
     const mutationPosition = parseInt(key, 10);
     if (mutationPosition >= overlap.start && mutationPosition <= overlap.stop) {
       queryMutations++;
-      if (key in subjectAllele.map) {
-        if (queryAllele.map[key] === subjectAllele.map[key]) {
+      if (key in subjectAllele.mutations) {
+        if (queryAllele.mutations[key] === subjectAllele.mutations[key]) {
           shared++;
         }
       }
     }
   }
-  for (const key of Object.keys(subjectAllele.map)) {
+  for (const key of Object.keys(subjectAllele.mutations)) {
     const mutationPosition = parseInt(key, 10);
     if (mutationPosition >= overlap.start && mutationPosition <= overlap.stop) {
       subjectMutations++;
@@ -149,8 +149,8 @@ function scoreFunction(queryAlleles, subjectAlleles) {
 }
 
 function compare(expectedKernelSize, query, subject) {
-  const queryProfile = query.core.profile;
-  const subjectProfile = subject.core.profile;
+  const queryProfile = query;
+  const subjectProfile = subject;
   const intersection = getCommonIds(query, subject);
 
   // let sharedLoci = 0.0;
