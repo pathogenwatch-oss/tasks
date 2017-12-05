@@ -1,5 +1,5 @@
-function getVariance(varianceData) {
-  const { core, filter } = varianceData;
+function getVariance(result) {
+  const { core, filter } = result;
   const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId));
   const doc = {};
   for (const familyId of Object.keys(core.p)) {
@@ -47,7 +47,7 @@ function getMatches({ coreProfile }) {
 function format(result) {
   return {
     summary: result.coreSummary,
-    variance: getVariance(result.varianceData),
+    variance: getVariance(result),
     fp: {
       reference: result.fp.subTypeAssignment,
       size: result.fp.fingerprintSize,
