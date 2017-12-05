@@ -380,7 +380,7 @@ func readInputDocs(r io.Reader) Context {
 }
 
 func main() {
-	expectedKernelSize := flag.Int("kernel", 1755637, "Expected kernel size")
+	expectedKernelSize := flag.Int("kernel", 0, "Expected kernel size")
 	workers := flag.Int("workers", 2, "Number of workers to use")
 
 	flag.Parse()
