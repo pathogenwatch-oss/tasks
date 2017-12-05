@@ -36,10 +36,12 @@ type Score struct {
 type Vector struct {
 	Index  int
 	Scores []int
+	Diffs  []int
 }
 
 type CacheOutput struct {
 	FileID   string         `json:"fileId"`
+	Diffs    map[string]int `json:"diffs"`
 	Scores   map[string]int `json:"scores"`
 	Progress float32        `json:"progress"`
 }
@@ -172,7 +174,7 @@ func scoreFunction(queryAlleles []Allele, subjectAlleles []Allele) []Score {
 	return scores
 }
 
-func compare(expectedKernelSize int, query map[string][]Allele, subject map[string][]Allele) int {
+func compareProfiles(expectedKernelSize int, query map[string][]Allele, subject map[string][]Allele) (int, int) {
 	sharedNts := 0
 	numDifferences := 0
 
@@ -187,20 +189,21 @@ func compare(expectedKernelSize int, query map[string][]Allele, subject map[stri
 	}
 
 	if sharedNts == 0 {
-		return expectedKernelSize
+		return 0, expectedKernelSize
 	}
 
 	if numDifferences == 0 {
-		return 0
+		return 0, 0
 	}
 
 	score := float64(numDifferences) / (float64(sharedNts) / float64(expectedKernelSize))
-	return int(math.Floor(score + 0.5))
+	return numDifferences, int(math.Floor(score + 0.5))
 }
 
 func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
 	query := context.Genomes[queryIndex]
 	subjects := context.Genomes[:queryIndex]
+	diffs := make([]int, len(subjects))
 	scores := make([]int, len(subjects))
 
 	for index, subject := range subjects {
@@ -211,12 +214,15 @@ func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
 			}
 		}
 
-		scores[index] = compare(expectedKernelSize, context.VarianceData[query.ID], context.VarianceData[subject.ID])
+		diff, score := compareProfiles(expectedKernelSize, context.VarianceData[query.ID], context.VarianceData[subject.ID])
+		diffs[index] = diff
+		scores[index] = score
 	}
 
 	return Vector{
 		Index:  queryIndex,
 		Scores: scores,
+		Diffs:  diffs,
 	}
 }
 
@@ -307,9 +313,11 @@ func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
 		v := <-results
 		matrix[v.Index] = v.Scores
 		cachedScores := make(map[string]int)
+		cachedDiffs := make(map[string]int)
 		for j, score := range v.Scores {
 			if _, found := context.ScoreCache[context.Genomes[v.Index].FileID][context.Genomes[j].FileID]; !found {
 				cachedScores[context.Genomes[j].FileID] = score
+				cachedDiffs[context.Genomes[j].FileID] = v.Diffs[j]
 			}
 		}
 		index := float32(v.Index + 1)
@@ -317,6 +325,7 @@ func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
 		enc.Encode(CacheOutput{
 			FileID:   context.Genomes[v.Index].FileID,
 			Scores:   cachedScores,
+			Diffs:    cachedDiffs,
 			Progress: ((index * index) - index) / ((total * total) - total) * 100,
 		})
 	}
