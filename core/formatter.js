@@ -1,8 +1,11 @@
 function getProfile(result) {
-  const { coreProfile, filter } = result;
+  const { coreProfile, filter, core } = result;
   const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId));
   const doc = [];
   for (const [ familyId, profile ] of Object.entries(coreProfile.coreProfile)) {
+    if (!(familyId in core.p)) {
+      throw new Error(`Cannot find ${familyId}`);
+    }
     const alleles = [];
     for (const { id, full, muts, pid, evalue, qId, qR, rR } of profile.alleles) {
       alleles.push({
