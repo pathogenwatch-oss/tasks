@@ -1,58 +1,43 @@
-function getVariance(result) {
-  const { core, filter } = result;
+function getProfile(result) {
+  const { coreProfile, filter } = result;
   const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId));
-  const doc = {};
-  for (const familyId of Object.keys(core.p)) {
-    if (filteredKeys.has(familyId)) continue;
-    const entries = [];
-    for (const { i, m, r } of core.p[familyId]) {
-      entries.push({
-        alleleId: i,
-        start: Math.min(r[0], r[1]),
-        stop: Math.max(r[0], r[1]),
-        mutations: m,
+  const doc = [];
+  for (const [ familyId, profile ] of Object.entries(coreProfile.coreProfile)) {
+    const alleles = [];
+    for (const { id, full, muts, pid, evalue, qId, qR, rR } of profile.alleles) {
+      alleles.push({
+        id,
+        full,
+        pid,
+        evalue,
+        qId,
+        qR,
+        rR,
+        mutations: muts.reduce((mutations, { rI, mut }) => {
+          mutations[rI] = mut;
+          return mutations;
+        }, {}),
       });
     }
-    doc[familyId] = entries;
+    doc.push({
+      familyId,
+      filter: filteredKeys.has(familyId),
+      refLength: profile.refLength,
+      alleles,
+    });
   }
   return doc;
 }
 
-function getMatches({ coreProfile }) {
-  const matches = [];
-  for (const id of Object.keys(coreProfile)) {
-    for (const match of coreProfile[id].alleles) {
-      matches.push({
-        partial: match.full !== true,
-        reversed: match.qR[0] > match.qR[1],
-        evalue: null,
-        identity: null,
-        query: {
-          id: match.qId,
-          start: match.qR[0],
-          stop: match.qR[1],
-        },
-        reference: {
-          id,
-          start: match.rR[0],
-          stop: match.rR[1],
-          length: null,
-        },
-      });
-    }
-  }
-  return matches;
-}
 
 function format(result) {
   return {
     summary: result.coreSummary,
-    variance: getVariance(result),
     fp: {
       reference: result.fp.subTypeAssignment,
       size: result.fp.fingerprintSize,
     },
-    matches: getMatches(result.coreProfile),
+    profile: getProfile(result),
   };
 }
 

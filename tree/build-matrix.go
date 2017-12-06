@@ -34,16 +34,16 @@ type Score struct {
 }
 
 type Vector struct {
-	Index  int
-	Scores []int
-	Diffs  []int
+	Index       int
+	Scores      []int
+	Differences []int
 }
 
 type CacheOutput struct {
-	FileID   string         `json:"fileId"`
-	Diffs    map[string]int `json:"diffs"`
-	Scores   map[string]int `json:"scores"`
-	Progress float32        `json:"progress"`
+	FileID      string         `json:"fileId"`
+	Differences map[string]int `json:"differences"`
+	Scores      map[string]int `json:"scores"`
+	Progress    float32        `json:"progress"`
 }
 
 type Context struct {
@@ -220,9 +220,9 @@ func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
 	}
 
 	return Vector{
-		Index:  queryIndex,
-		Scores: scores,
-		Diffs:  diffs,
+		Index:       queryIndex,
+		Scores:      scores,
+		Differences: diffs,
 	}
 }
 
@@ -240,14 +240,17 @@ func createGenome(doc map[string]interface{}) Genome {
 }
 
 func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
-	rawVariance := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
+	rawProfile := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["profile"].([]interface{})
 	variances := make(map[string][]Allele)
-	for k, v := range rawVariance {
-		rawAlleles := v.([]interface{})
+	for _, v := range rawProfile {
+		rawProfileEntry := v.(map[string]interface{})
+		familyID := rawProfileEntry["familyId"].(string)
+		rawAlleles := rawProfileEntry["alleles"].([]interface{})
 		alleles := make([]Allele, 0)
 		for _, allele := range rawAlleles {
 			rawAllele := allele.(map[string]interface{})
 			rawMutations := rawAllele["mutations"].(map[string]interface{})
+			rawRange := rawAllele["rR"].([]interface{})
 			mutations := make(map[int]string)
 			for p, n := range rawMutations {
 				position, err := strconv.Atoi(p)
@@ -255,14 +258,13 @@ func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 				mutations[position] = n.(string)
 			}
 			alleles = append(alleles, Allele{
-				AlleleID:  rawAllele["alleleId"].(string),
-				Start:     int(rawAllele["start"].(int32)),
-				Stop:      int(rawAllele["stop"].(int32)),
+				AlleleID:  rawAllele["id"].(string),
+				Start:     int(rawRange[0].(int32)),
+				Stop:      int(rawRange[1].(int32)),
 				Mutations: mutations,
 			})
 		}
-
-		variances[k] = alleles
+		variances[familyID] = alleles
 	}
 	return variances
 }
@@ -274,7 +276,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids := make([]string, len(context.Genomes)+1)
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
-		ids[i+1] = doc.ID
+		ids[i+1] = doc.FileID
 		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
@@ -317,16 +319,16 @@ func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
 		for j, score := range v.Scores {
 			if _, found := context.ScoreCache[context.Genomes[v.Index].FileID][context.Genomes[j].FileID]; !found {
 				cachedScores[context.Genomes[j].FileID] = score
-				cachedDiffs[context.Genomes[j].FileID] = v.Diffs[j]
+				cachedDiffs[context.Genomes[j].FileID] = v.Differences[j]
 			}
 		}
 		index := float32(v.Index + 1)
 		total := float32(numDocs)
 		enc.Encode(CacheOutput{
-			FileID:   context.Genomes[v.Index].FileID,
-			Scores:   cachedScores,
-			Diffs:    cachedDiffs,
-			Progress: ((index * index) - index) / ((total * total) - total) * 100,
+			FileID:      context.Genomes[v.Index].FileID,
+			Scores:      cachedScores,
+			Differences: cachedDiffs,
+			Progress:    ((index * index) - index) / ((total * total) - total) * 100,
 		})
 	}
 	return matrix
