@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -239,6 +240,12 @@ func createGenome(doc map[string]interface{}) Genome {
 	}
 }
 
+var re = regexp.MustCompile("[^ACTG]")
+
+func isValidMutation(mut string) bool {
+	return len(re.FindString(mut)) == 0
+}
+
 func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 	rawProfile := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["profile"].([]interface{})
 	variances := make(map[string][]Allele)
@@ -253,14 +260,18 @@ func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 			rawRange := rawAllele["rR"].([]interface{})
 			mutations := make(map[int]string)
 			for p, n := range rawMutations {
-				position, err := strconv.Atoi(p)
-				check(err)
-				mutations[position] = n.(string)
+				if isValidMutation(n.(string)) {
+					position, err := strconv.Atoi(p)
+					check(err)
+					mutations[position] = n.(string)
+				}
 			}
+			start := int(rawRange[0].(int32))
+			stop := int(rawRange[1].(int32))
 			alleles = append(alleles, Allele{
 				AlleleID:  rawAllele["id"].(string),
-				Start:     int(rawRange[0].(int32)),
-				Stop:      int(rawRange[1].(int32)),
+				Start:     minInt(start, stop),
+				Stop:      maxInt(start, stop),
 				Mutations: mutations,
 			})
 		}

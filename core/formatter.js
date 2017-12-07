@@ -17,7 +17,7 @@ function getProfile(result) {
         qR,
         rR,
         mutations: muts.reduce((mutations, { t, rI, mut }) => {
-          if (t === 'S') {
+          if (t === 'S' && /[^ACTG]/i.test(mut) === false) {
             mutations[rI] = mut;
           }
           return mutations;
