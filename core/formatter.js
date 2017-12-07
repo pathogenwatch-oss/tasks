@@ -1,12 +1,12 @@
+/* eslint no-param-reassign: 0 */
+
 function getProfile(result) {
-  const { coreProfile, filter, core } = result;
+  const { coreProfile, filter } = result;
   const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId));
   const doc = [];
   for (const [ familyId, profile ] of Object.entries(coreProfile.coreProfile)) {
-    if (!(familyId in core.p)) {
-      throw new Error(`Cannot find ${familyId}`);
-    }
     const alleles = [];
+    const alleleIds = new Set();
     for (const { id, full, muts, pid, evalue, qId, qR, rR } of profile.alleles) {
       alleles.push({
         id,
@@ -16,11 +16,15 @@ function getProfile(result) {
         qId,
         qR,
         rR,
-        mutations: muts.reduce((mutations, { rI, mut }) => {
-          mutations[rI] = mut;
+        mutations: muts.reduce((mutations, { t, rI, mut }) => {
+          if (t === 'S') {
+            mutations[rI] = mut;
+          }
           return mutations;
         }, {}),
+        duplicate: alleleIds.has(id),
       });
+      alleleIds.add(id);
     }
     doc.push({
       familyId,
