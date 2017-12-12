@@ -24,9 +24,8 @@ type Allele struct {
 }
 
 type Genome struct {
-	ID        string
-	FileID    string
-	Variances *map[string][]Allele
+	ID     string
+	FileID string
 }
 
 type Score struct {
@@ -215,7 +214,16 @@ func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
 			}
 		}
 
-		diff, score := compareProfiles(expectedKernelSize, context.VarianceData[query.ID], context.VarianceData[subject.ID])
+		queryProfile, queryFound := context.VarianceData[query.ID]
+		subjectProfile, subjectFound := context.VarianceData[subject.ID]
+		if !queryFound {
+			panic("Missing genome " + query.ID + " (" + query.FileID + ")")
+		}
+		if !subjectFound {
+			panic("Missing genome " + subject.ID + " (" + subject.FileID + ")")
+		}
+
+		diff, score := compareProfiles(expectedKernelSize, queryProfile, subjectProfile)
 		diffs[index] = diff
 		scores[index] = score
 	}
@@ -247,6 +255,11 @@ func isValidMutation(mut string) bool {
 }
 
 func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
+	core := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})
+	if _, ok := core["profile"]; !ok {
+		panic("Profile not found")
+	}
+
 	rawProfile := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["profile"].([]interface{})
 	variances := make(map[string][]Allele)
 	for _, v := range rawProfile {
@@ -287,7 +300,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids := make([]string, len(context.Genomes)+1)
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
-		ids[i+1] = doc.FileID
+		ids[i+1] = doc.ID
 		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
@@ -363,6 +376,9 @@ func readInputDocs(r io.Reader) Context {
 			}
 			log.Println("")
 			log.Println("Read all docs")
+			log.Println("Score cache", len(cache))
+			log.Println("Genomes", len(genomes))
+			log.Println("Variance profiles", len(varianceData))
 			return Context{
 				Genomes:      genomes,
 				GenomeByID:   docByID,

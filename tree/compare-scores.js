@@ -34,7 +34,10 @@ function compare(left, right) {
     if (fileId in right.scores) {
       for (const fileId2 of Object.keys(left.scores[fileId])) {
         if (fileId2 in right.scores[fileId]) {
-          if (left.scores[fileId][fileId2] !== right.scores[fileId][fileId2]) {
+          if (left.scores[fileId][fileId2] === right.scores[fileId][fileId2]) {
+            console.log(fileId, '\t', fileId2, '\t', left.scores[fileId][fileId2], '\t', right.scores[fileId][fileId2]);
+          }
+          else {
             console.error(`Score ${fileId}:${fileId2} mismatch ${left.scores[fileId][fileId2]} <> ${right.scores[fileId][fileId2]}`);
           }
         }
