@@ -11,6 +11,6 @@ do
     docker run \
       --rm \
       -v $1:/data \
-      registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.12 -s 1280 -i $(basename $file) > $corefp
+      registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.16 -s 1280 -i $(basename $file) > $corefp
   fi
 done
