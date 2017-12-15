@@ -299,7 +299,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids := make([]string, len(context.Genomes)+1)
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
-		ids[i+1] = doc.FileID
+		ids[i+1] = doc.ID
 		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
