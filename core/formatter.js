@@ -1,13 +1,13 @@
 /* eslint no-param-reassign: 0 */
 
-function getProfile(result) {
+function formatCore(result) {
   const { coreProfile, filter } = result;
-  const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId));
+  const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId + x.alleleId));
   const doc = [];
   for (const [ familyId, profile ] of Object.entries(coreProfile.coreProfile)) {
     const alleles = [];
     const alleleIds = new Set();
-    for (const { id, full, muts, pid, evalue, qId, qR, rR } of profile.alleles) {
+    for (const { id, full, muts, pid, evalue, qId, qR, rR, r } of profile.alleles) {
       alleles.push({
         id,
         full,
@@ -22,20 +22,19 @@ function getProfile(result) {
           }
           return mutations;
         }, {}),
-        duplicate: alleleIds.has(id),
+        reverse: r,
+        filter: alleleIds.has(id) || filteredKeys.has(familyId + id),
       });
       alleleIds.add(id);
     }
     doc.push({
       familyId,
-      filter: filteredKeys.has(familyId),
       refLength: profile.refLength,
       alleles,
     });
   }
   return doc;
 }
-
 
 function format(result) {
   return {
@@ -44,7 +43,7 @@ function format(result) {
       reference: result.fp.subTypeAssignment,
       size: result.fp.fingerprintSize,
     },
-    profile: getProfile(result),
+    profile: formatCore(result),
   };
 }
 
