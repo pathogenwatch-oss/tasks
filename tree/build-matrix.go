@@ -264,13 +264,12 @@ func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 	variances := make(map[string][]Allele)
 	for _, v := range rawProfile {
 		rawProfileEntry := v.(map[string]interface{})
-		familyID := rawProfileEntry["familyId"].(string)
+		familyID := rawProfileEntry["id"].(string)
 		rawAlleles := rawProfileEntry["alleles"].([]interface{})
 		alleles := make([]Allele, 0)
 		for _, allele := range rawAlleles {
 			rawAllele := allele.(map[string]interface{})
 			rawMutations := rawAllele["mutations"].(map[string]interface{})
-			rawRange := rawAllele["rR"].([]interface{})
 			mutations := make(map[int]string)
 			for p, n := range rawMutations {
 				if isValidMutation(n.(string)) {
@@ -279,8 +278,8 @@ func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 					mutations[position] = n.(string)
 				}
 			}
-			start := int(rawRange[0].(int32))
-			stop := int(rawRange[1].(int32))
+			start := int(rawAllele["rstart"].(int32))
+			stop := int(rawAllele["rstop"].(int32))
 			alleles = append(alleles, Allele{
 				AlleleID:  rawAllele["id"].(string),
 				Start:     minInt(start, stop),
@@ -300,7 +299,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids := make([]string, len(context.Genomes)+1)
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
-		ids[i+1] = doc.ID
+		ids[i+1] = doc.FileID
 		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
