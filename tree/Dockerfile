@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.14 as core
+FROM registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.16 as core
 
 FROM golang:1.9-alpine as go
 
