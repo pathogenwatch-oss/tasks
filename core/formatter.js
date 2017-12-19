@@ -2,8 +2,8 @@
 
 function formatCore(result) {
   const { coreProfile, filter } = result;
-  const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId + x.alleleId));
-  // const filteredFamilyIds = new Set(filter.filteredAlleles.map(x => x.familyId));
+  // const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId + x.alleleId));
+  const filteredFamilyIds = new Set(filter.filteredAlleles.map(x => x.familyId));
   const doc = [];
   for (const [ familyId, profile ] of Object.entries(coreProfile.coreProfile)) {
     const alleles = [];
@@ -27,7 +27,7 @@ function formatCore(result) {
         }, {}),
         reverse: r,
         // exclude duplicated or filtered alleles
-        filter: alleleIds.has(id) || filteredKeys.has(familyId + id),
+        filter: alleleIds.has(id),
         // filterFamily: filteredFamilyIds.has(familyId),
         // duplicate: alleleIds.has(id),
       });
@@ -37,6 +37,7 @@ function formatCore(result) {
       id: familyId,
       rlength: profile.refLength,
       alleles,
+      filter: filteredFamilyIds.has(familyId),
     });
   }
   return doc;
