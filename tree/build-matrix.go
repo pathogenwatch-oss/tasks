@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,9 +24,8 @@ type Allele struct {
 }
 
 type Genome struct {
-	ID        string
-	FileID    string
-	Variances *map[string][]Allele
+	ID     string
+	FileID string
 }
 
 type Score struct {
@@ -34,16 +34,16 @@ type Score struct {
 }
 
 type Vector struct {
-	Index  int
-	Scores []int
-	Diffs  []int
+	Index       int
+	Scores      []int
+	Differences []int
 }
 
 type CacheOutput struct {
-	FileID   string         `json:"fileId"`
-	Diffs    map[string]int `json:"diffs"`
-	Scores   map[string]int `json:"scores"`
-	Progress float32        `json:"progress"`
+	FileID      string         `json:"fileId"`
+	Differences map[string]int `json:"differences"`
+	Scores      map[string]int `json:"scores"`
+	Progress    float32        `json:"progress"`
 }
 
 type Context struct {
@@ -214,15 +214,24 @@ func vector(expectedKernelSize int, context Context, queryIndex int) Vector {
 			}
 		}
 
-		diff, score := compareProfiles(expectedKernelSize, context.VarianceData[query.ID], context.VarianceData[subject.ID])
+		queryProfile, queryFound := context.VarianceData[query.ID]
+		subjectProfile, subjectFound := context.VarianceData[subject.ID]
+		if !queryFound {
+			panic("Missing genome " + query.ID + " (" + query.FileID + ")")
+		}
+		if !subjectFound {
+			panic("Missing genome " + subject.ID + " (" + subject.FileID + ")")
+		}
+
+		diff, score := compareProfiles(expectedKernelSize, queryProfile, subjectProfile)
 		diffs[index] = diff
 		scores[index] = score
 	}
 
 	return Vector{
-		Index:  queryIndex,
-		Scores: scores,
-		Diffs:  diffs,
+		Index:       queryIndex,
+		Scores:      scores,
+		Differences: diffs,
 	}
 }
 
@@ -239,30 +248,52 @@ func createGenome(doc map[string]interface{}) Genome {
 	}
 }
 
-func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
-	rawVariance := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["variance"].(map[string]interface{})
-	variances := make(map[string][]Allele)
-	for k, v := range rawVariance {
-		rawAlleles := v.([]interface{})
-		alleles := make([]Allele, 0)
-		for _, allele := range rawAlleles {
-			rawAllele := allele.(map[string]interface{})
-			rawMutations := rawAllele["mutations"].(map[string]interface{})
-			mutations := make(map[int]string)
-			for p, n := range rawMutations {
-				position, err := strconv.Atoi(p)
-				check(err)
-				mutations[position] = n.(string)
-			}
-			alleles = append(alleles, Allele{
-				AlleleID:  rawAllele["alleleId"].(string),
-				Start:     int(rawAllele["start"].(int32)),
-				Stop:      int(rawAllele["stop"].(int32)),
-				Mutations: mutations,
-			})
-		}
+var re = regexp.MustCompile("[^ACTG]")
 
-		variances[k] = alleles
+func isValidMutation(mut string) bool {
+	return len(re.FindString(mut)) == 0
+}
+
+func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
+	core := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})
+	if _, ok := core["profile"]; !ok {
+		panic("Profile not found")
+	}
+
+	rawProfile := doc["analysis"].(map[string]interface{})["core"].(map[string]interface{})["profile"].([]interface{})
+	variances := make(map[string][]Allele)
+	for _, v := range rawProfile {
+		rawProfileEntry := v.(map[string]interface{})
+		filteredFamily := rawProfileEntry["filter"].(bool)
+		if filteredFamily == false {
+			familyID := rawProfileEntry["id"].(string)
+			rawAlleles := rawProfileEntry["alleles"].([]interface{})
+			alleles := make([]Allele, 0)
+			for _, allele := range rawAlleles {
+				rawAllele := allele.(map[string]interface{})
+				filteredAllele := rawAllele["filter"].(bool)
+				if filteredAllele == false {
+					rawMutations := rawAllele["mutations"].(map[string]interface{})
+					mutations := make(map[int]string)
+					for p, n := range rawMutations {
+						if isValidMutation(n.(string)) {
+							position, err := strconv.Atoi(p)
+							check(err)
+							mutations[position] = n.(string)
+						}
+					}
+					start := int(rawAllele["rstart"].(int32))
+					stop := int(rawAllele["rstop"].(int32))
+					alleles = append(alleles, Allele{
+						AlleleID:  rawAllele["id"].(string),
+						Start:     minInt(start, stop),
+						Stop:      maxInt(start, stop),
+						Mutations: mutations,
+					})
+				}
+			}
+			variances[familyID] = alleles
+		}
 	}
 	return variances
 }
@@ -275,6 +306,7 @@ func outputMatrix(context Context, matrix [][]int) {
 	ids[0] = "ID"
 	for i, doc := range context.Genomes {
 		ids[i+1] = doc.ID
+		// ids[i+1] = doc.FileID
 		// ids[i+1] = strconv.Itoa(i)
 	}
 	_, writeErr1 := file.WriteString(strings.Join(ids, "\t") + "\n")
@@ -317,16 +349,16 @@ func buildMatrix(expectedKernelSize int, workers int, context Context) [][]int {
 		for j, score := range v.Scores {
 			if _, found := context.ScoreCache[context.Genomes[v.Index].FileID][context.Genomes[j].FileID]; !found {
 				cachedScores[context.Genomes[j].FileID] = score
-				cachedDiffs[context.Genomes[j].FileID] = v.Diffs[j]
+				cachedDiffs[context.Genomes[j].FileID] = v.Differences[j]
 			}
 		}
 		index := float32(v.Index + 1)
 		total := float32(numDocs)
 		enc.Encode(CacheOutput{
-			FileID:   context.Genomes[v.Index].FileID,
-			Scores:   cachedScores,
-			Diffs:    cachedDiffs,
-			Progress: ((index * index) - index) / ((total * total) - total) * 100,
+			FileID:      context.Genomes[v.Index].FileID,
+			Scores:      cachedScores,
+			Differences: cachedDiffs,
+			Progress:    ((index * index) - index) / ((total * total) - total) * 100,
 		})
 	}
 	return matrix
@@ -350,6 +382,9 @@ func readInputDocs(r io.Reader) Context {
 			}
 			log.Println("")
 			log.Println("Read all docs")
+			log.Println("Score cache", len(cache))
+			log.Println("Genomes", len(genomes))
+			log.Println("Variance profiles", len(varianceData))
 			return Context{
 				Genomes:      genomes,
 				GenomeByID:   docByID,
