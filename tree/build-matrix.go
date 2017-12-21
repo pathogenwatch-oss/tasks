@@ -264,30 +264,36 @@ func createGenomeVariance(doc map[string]interface{}) map[string][]Allele {
 	variances := make(map[string][]Allele)
 	for _, v := range rawProfile {
 		rawProfileEntry := v.(map[string]interface{})
-		familyID := rawProfileEntry["id"].(string)
-		rawAlleles := rawProfileEntry["alleles"].([]interface{})
-		alleles := make([]Allele, 0)
-		for _, allele := range rawAlleles {
-			rawAllele := allele.(map[string]interface{})
-			rawMutations := rawAllele["mutations"].(map[string]interface{})
-			mutations := make(map[int]string)
-			for p, n := range rawMutations {
-				if isValidMutation(n.(string)) {
-					position, err := strconv.Atoi(p)
-					check(err)
-					mutations[position] = n.(string)
+		filteredFamily := rawProfileEntry["filter"].(bool)
+		if filteredFamily == false {
+			familyID := rawProfileEntry["id"].(string)
+			rawAlleles := rawProfileEntry["alleles"].([]interface{})
+			alleles := make([]Allele, 0)
+			for _, allele := range rawAlleles {
+				rawAllele := allele.(map[string]interface{})
+				filteredAllele := rawAllele["filter"].(bool)
+				if filteredAllele == false {
+					rawMutations := rawAllele["mutations"].(map[string]interface{})
+					mutations := make(map[int]string)
+					for p, n := range rawMutations {
+						if isValidMutation(n.(string)) {
+							position, err := strconv.Atoi(p)
+							check(err)
+							mutations[position] = n.(string)
+						}
+					}
+					start := int(rawAllele["rstart"].(int32))
+					stop := int(rawAllele["rstop"].(int32))
+					alleles = append(alleles, Allele{
+						AlleleID:  rawAllele["id"].(string),
+						Start:     minInt(start, stop),
+						Stop:      maxInt(start, stop),
+						Mutations: mutations,
+					})
 				}
 			}
-			start := int(rawAllele["rstart"].(int32))
-			stop := int(rawAllele["rstop"].(int32))
-			alleles = append(alleles, Allele{
-				AlleleID:  rawAllele["id"].(string),
-				Start:     minInt(start, stop),
-				Stop:      maxInt(start, stop),
-				Mutations: mutations,
-			})
+			variances[familyID] = alleles
 		}
-		variances[familyID] = alleles
 	}
 	return variances
 }
