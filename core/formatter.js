@@ -1,6 +1,6 @@
 /* eslint no-param-reassign: 0 */
 
-function formatCore(result) {
+function formatProfile(result) {
   const { coreProfile, filter } = result;
   // const filteredKeys = new Set(filter.filteredAlleles.map(x => x.familyId + x.alleleId));
   const filteredFamilyIds = new Set(filter.filteredAlleles.map(x => x.familyId));
@@ -43,14 +43,14 @@ function formatCore(result) {
   return doc;
 }
 
-function format(result) {
+function formatCore(result) {
   return {
     summary: result.coreSummary,
     fp: {
       reference: result.fp.subTypeAssignment,
       size: result.fp.fingerprintSize,
     },
-    profile: formatCore(result),
+    profile: formatProfile(result),
   };
 }
 
@@ -80,10 +80,12 @@ function read(stdin) {
 
 read(process.stdin)
 .then(JSON.parse)
-.then(format)
+.then(formatCore)
 .then(JSON.stringify)
 .then(console.log)
 .catch(e => {
   console.error(e);
   process.exit(1);
 });
+
+module.exports.formatProfile = formatProfile;

@@ -3,25 +3,7 @@ const fs = require('fs');
 
 const bson = new BSON();
 
-function reformat(profile) {
-  return profile.reduce((list, item) => {
-    if (item.filter) return list;
-    list.push({
-      familyId: item.familyId,
-      alleles: item.alleles.reduce((memo, allele) => {
-        if (allele.duplicate === false) {
-          memo.push({
-            id: allele.id,
-            rR: allele.rR,
-            mutations: allele.mutations,
-          });
-        }
-        return memo;
-      }, []),
-    });
-    return list;
-  }, []);
-}
+const { formatProfile } = require('../core/formatter');
 
 function main() {
   const genomes = [];
@@ -38,7 +20,6 @@ function main() {
   for (let index = 2; index < process.argv.length; index++) {
     const file = process.argv[index];
     const genome = genomes[index - 2];
-    console.error(genome.fileId, file);
     const data = fs.readFileSync(file);
     const core = JSON.parse(data);
     const doc = {
@@ -46,7 +27,7 @@ function main() {
       fileId: genome.fileId,
       analysis: {
         core: {
-          profile: reformat(core.profile),
+          profile: formatProfile(core.profile),
         },
       },
     };
