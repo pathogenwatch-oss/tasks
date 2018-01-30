@@ -1,9 +1,9 @@
-const BSON = require('bson');
 const fs = require('fs');
+const BSON = require('bson');
 
 const bson = new BSON();
 
-const { formatProfile } = require('../core/formatter');
+const formatProfile = require('../core/formatProfile');
 
 function main() {
   const genomes = [];
@@ -27,7 +27,7 @@ function main() {
       fileId: genome.fileId,
       analysis: {
         core: {
-          profile: formatProfile(core.profile),
+          profile: formatProfile(core),
         },
       },
     };
