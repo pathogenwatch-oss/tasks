@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/wgsa-test-images/core-fp:0.0.29 as core
+FROM registry.gitlab.com/cgps/cgps-core-fp:0.1 as core
 
 FROM golang:1.9-alpine as go
 
@@ -21,7 +21,7 @@ RUN echo "install.packages('ape', repos='http://cran.ma.imperial.ac.uk')" | /usr
 COPY create-tree.r /wgsa/create-tree.r
 COPY --from=go /wgsa/build-matrix /wgsa/build-matrix
 COPY --from=go /wgsa/get-kernel-size /wgsa/get-kernel-size
-COPY --from=core /core/databases/*_ks.jsn /wgsa/
+COPY --from=core /usr/local/cgps-core-fp/schemes/*_ks.jsn /wgsa/
 
 COPY entrypoint.sh /wgsa/entrypoint.sh
 
