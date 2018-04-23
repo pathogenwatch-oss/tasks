@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/cgps-core-fp:0.2
+FROM registry.gitlab.com/cgps/cgps-core-fp:v0.2.7
 
 COPY formatter.js /wgsa/formatter.js
 COPY formatProfile.js /wgsa/formatProfile.js
