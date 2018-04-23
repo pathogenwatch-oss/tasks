@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/cgps-core-fp:0.2 as core
+FROM registry.gitlab.com/cgps/wgsa-tasks/core:t32 as core
 
 FROM golang:1.9-alpine as go
 
