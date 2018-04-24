@@ -1,5 +1,7 @@
 FROM registry.gitlab.com/cgps/cgps-mlst/cgmlst:v1.2.0
 
-COPY formatter.js /wgsa
+COPY formatter.js /wgsa/formatter.js
+COPY entrypoint.sh /wgsa/entrypoint.sh
 
-CMD [ "/usr/local/bin/node", "--max-old-space-size=4096", "/usr/local/mlst/index.js", "|", "/usr/local/bin/node", "/wgsa/formatter.js" ]
+ENTRYPOINT []
+CMD ["/wgsa/entrypoint.sh"]
