@@ -18,7 +18,7 @@ function format({ st, url, genes, alleles }) {
 
   return {
     st,
-    url,
+    scheme: url,
     source: getSource(url),
     matches,
   };
