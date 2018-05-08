@@ -4,7 +4,7 @@ COPY formatter.go .
 
 RUN go build formatter.go && chmod +x formatter
 
-FROM cgps/genotyphi:1.0.1
+FROM registry.gitlab.com/cgps/cgps-genotyphi:v1.1.0
 
 COPY --from=go /go/formatter /wgsa/formatter
 
