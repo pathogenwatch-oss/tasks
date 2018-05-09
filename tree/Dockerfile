@@ -3,7 +3,7 @@ FROM registry.gitlab.com/cgps/wgsa-tasks/core:v1 as core
 FROM golang:1.9-alpine as go
 
 RUN apk add --update git
-RUN go get github.com/pkg/bson
+RUN go get gitlab.com/cgps/pkg-bson
 COPY build-matrix.go /wgsa/build-matrix.go
 RUN cd /wgsa && go build /wgsa/build-matrix.go
 RUN chmod +x /wgsa/build-matrix

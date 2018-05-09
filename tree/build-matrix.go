@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/bson"
+	"gitlab.com/cgps/pkg-bson"
 )
 
 type Allele struct {
