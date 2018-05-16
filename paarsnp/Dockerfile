@@ -1,6 +1,6 @@
 FROM node:8-slim as node
 
-FROM registry.gitlab.com/cgps/cgps-paarsnp:v1.1.0
+FROM registry.gitlab.com/cgps/cgps-paarsnp:v1.1.4
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 
