@@ -7,9 +7,14 @@ const formatProfile = require('../core/formatProfile');
 
 function main() {
   const genomes = [];
+  const idMap = {};
 
   for (let index = 0; index < process.argv.length - 2; index++) {
-    genomes.push({ _id: new BSON.ObjectID(), fileId: index.toString() });
+    const _id = new BSON.ObjectID();
+    genomes.push({ _id, fileId: index.toString() });
+
+    const file = process.argv[index + 2];
+    idMap[_id] = file;
   }
 
   process.stdout.write(
@@ -34,6 +39,8 @@ function main() {
     process.stdout.write(bson.serialize(doc));
     id++;
   }
+
+  fs.writeFileSync('./ids.json', JSON.stringify(idMap));
 }
 
 main();
