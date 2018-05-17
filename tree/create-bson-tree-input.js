@@ -31,9 +31,7 @@ function main() {
       _id: genome._id,
       fileId: genome.fileId,
       analysis: {
-        core: {
-          profile: formatProfile(core),
-        },
+        core
       },
     };
     process.stdout.write(bson.serialize(doc));

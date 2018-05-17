@@ -2,23 +2,38 @@
 
 BASE_CORE_VERSION=$1
 FASTA_DIR=$2
+ORGANISM_TAXID=$3
+
 TEST_VERSION=test
+FASTA_SUFFIX='.fasta'
 
 cd core
 docker build \
-  --build-arg base=$BASE_CORE_VERSION \
+  --build-arg BASE=$BASE_CORE_VERSION \
   -t registry.gitlab.com/cgps/wgsa-tasks/core:$TEST_VERSION .
 cd ..
 
 cd tree
 docker build \
-  --build-arg core=$TEST_VERSION \
+  --build-arg CORE=$TEST_VERSION \
   -t registry.gitlab.com/cgps/wgsa-tasks/tree:$TEST_VERSION .
 
-# need to pass the list of filenames to the node script, not sure if this is right
-FASTAS=$(ls $FASTA_DIR)
-node create-bson-tree-input.js $FASTAS > input.bson
+mkdir -p inputs
 
-cat input.bson | docker run -i registry.gitlab.com/cgps/wgsa-tasks/tree:$TEST_VERSION > output.json
+for FILE in $(ls $FASTA_DIR/*$FASTA_SUFFIX)
+do
+  cat $FILE | docker run -i \
+    -e WGSA_ORGANISM_TAXID=$ORGANISM_TAXID \
+    registry.gitlab.com/cgps/wgsa-tasks/core:$TEST_VERSION > inputs/$(basename -s $FASTA_SUFFIX $FILE).json
+done
+
+CORES=$(ls inputs/*.json)
+
+node create-bson-tree-input.js $CORES > input.bson
+rm -r inputs
+
+cat input.bson | docker run -i \
+  -e WGSA_ORGANISM_TAXID=$ORGANISM_TAXID \
+  registry.gitlab.com/cgps/wgsa-tasks/tree:$TEST_VERSION > output.json
 
 # TODO: run script to replace taxa in output.json with names from ids.json, print final newick
