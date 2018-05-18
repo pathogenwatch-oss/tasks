@@ -30,10 +30,10 @@ done
 CORES=$(ls inputs/*.json)
 
 node create-bson-tree-input.js $CORES > input.bson
-rm -r inputs
+rm -rf inputs
 
 cat input.bson | docker run -i \
   -e WGSA_ORGANISM_TAXID=$ORGANISM_TAXID \
-  registry.gitlab.com/cgps/wgsa-tasks/tree:$TEST_VERSION > output.json
+  registry.gitlab.com/cgps/wgsa-tasks/tree:$TEST_VERSION | tail -n 1 > output.json
 
-# TODO: run script to replace taxa in output.json with names from ids.json, print final newick
+node replace_ids.js ids.json output.json
