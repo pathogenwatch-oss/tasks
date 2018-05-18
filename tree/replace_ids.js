@@ -10,7 +10,7 @@ const tree = JSON.parse(fs.readFileSync(tree_filename, 'utf8'));
 let newick = tree['newick'];
 
 Object.keys(map).forEach(function (key) {
-    const true_name = map[key].replace('.json', '').replace('inputs/', '');
+    const true_name = map[key].replace('.json', '').replace('inputs/', '').replace('/tmp/', '');
     newick = newick.replace(key, true_name);
 });
 
