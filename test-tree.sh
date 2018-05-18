@@ -8,15 +8,26 @@ TEST_VERSION=test
 FASTA_SUFFIX='.fasta'
 NUM_PROCS=8
 
+if [ -z "$BASE_CORE_VERSION" ]; then
+    BUILD_ARGS_C=""
+    BUILD_ARGS_T=""
+else
+    BUILD_ARGS_C="--build-arg BASE=${BASE_CORE_VERSION}"
+    BUILD_ARGS_T="--build-arg CORE=${BASE_CORE_VERSION}"
+fi
+
+echo "${BUILD_ARGS_C}"
+echo "${BUILD_ARGS_T}"
+
 cd core
 docker build \
-  --build-arg BASE=${BASE_CORE_VERSION} \
+  ${BUILD_ARGS_C} \
   -t registry.gitlab.com/cgps/wgsa-tasks/core:${TEST_VERSION} .
 cd ..
 
 cd tree
 docker build \
-  --build-arg CORE=${TEST_VERSION} \
+  ${BUILD_ARGS_T} \
   -t registry.gitlab.com/cgps/wgsa-tasks/tree:${TEST_VERSION} .
 
 mkdir -p inputs
