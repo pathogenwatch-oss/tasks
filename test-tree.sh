@@ -34,7 +34,7 @@ mkdir /tmp/inputs
 
 echo "Generating cores"
 
-find ${FASTA_DIR} -maxdepth 1 -name "*${FASTA_SUFFIX}" -print0 | xargs -0 -I infile -P ${NUM_PROCS} sh -c 'echo "assembly: $1, organism: $2, version:$3, fasta suffix: $4" && cat "$1" | docker run --rm -i -e WGSA_ORGANISM_TAXID="$2" registry.gitlab.com/cgps/wgsa-tasks/core:"$3" > /tmp/inputs/$(basename "$1" "$4").json' -- infile ${ORGANISM_TAXID} ${BASE_CORE_VERSION} ${FASTA_SUFFIX}
+find ${FASTA_DIR} -maxdepth 1 -name "*${FASTA_SUFFIX}" -print0 | xargs -0 -I infile -P ${NUM_PROCS} sh -c 'echo "assembly: $1, organism: $2, version:$3, fasta suffix: $4" && cat "$1" | docker run --rm -i -e WGSA_ORGANISM_TAXID="$2" registry.gitlab.com/cgps/wgsa-tasks/core:"$3" > /tmp/inputs/$(basename "$1" "$4").json' -- infile ${ORGANISM_TAXID} ${TEST_VERSION} ${FASTA_SUFFIX}
 
 CORES=$(ls /tmp/inputs/*.json)
 
