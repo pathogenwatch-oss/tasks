@@ -44,6 +44,7 @@ rm -rf /tmp/inputs
 
 cat /tmp/input.bson | docker run --rm -i \
   -e WGSA_ORGANISM_TAXID=${ORGANISM_TAXID} \
+  -e WGSA_WORKERS=${NUM_PROCS} \
   registry.gitlab.com/cgps/wgsa-tasks/tree:${TEST_VERSION} | tail -n 1 > tc_output.json
 
 node replace_ids.js ids.json tc_output.json
