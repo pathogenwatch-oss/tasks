@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mash-sketches": "gitlab:cgps/mash-sketches#v88.0.0",
-    "mash-speciator": "gitlab:cgps/mash-speciator#v4.0.0"
+    "mash-sketches": "gitlab:cgps/mash-sketches#v88.1.0",
+    "mash-speciator": "gitlab:cgps/mash-speciator#v5.0.0"
   }
 }

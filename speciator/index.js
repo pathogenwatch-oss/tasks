@@ -1,6 +1,5 @@
 /* eslint no-console: 0 */
 
-const fs = require('fs');
 const path = require('path');
 
 const { closestMatchSync } = require('mash-node-native');
@@ -15,18 +14,17 @@ const mash = closestMatchSync(sketchFilePath, fastaFilePath);
 
 const createMashSpeciator = require('mash-speciator');
 const metadataFilePath =
-  path.join(referencesDir, 'refseq-archaea-bacteria-fungi-viral-k16-s400.csv');
+  path.join(referencesDir, 'refseq-archaea-bacteria-fungi-viral-k16-s400.json');
 const speciator = createMashSpeciator(sketchFilePath, metadataFilePath);
 
 const results = speciator.queryResults(mash) || {};
 
 console.log(
   JSON.stringify({
-    organismName: results.refseqScientificName,
-    organismId: results.organismTaxId,
-    speciesId: results.speciesTaxId,
+    taxId: results.refseqTaxId.toString(),
+    speciesId: results.speciesTaxId.toString(),
     speciesName: results.speciesScientificName,
-    genusId: results.genusTaxId || undefined,
+    genusId: results.genusTaxId ? results.genusTaxId.toString() : undefined,
     genusName: results.genusScientificName || undefined,
     referenceId: results.refseqId,
     mashDistance: results.mashDistance,
