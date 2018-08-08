@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/cgps-mlst:cgmlst-20180516172348-v1.6.1
+FROM registry.gitlab.com/cgps/cgps-mlst:cgmlst-20180806174658-v1.6.9
 
 COPY formatter.js /wgsa/formatter.js
 COPY entrypoint.sh /wgsa/entrypoint.sh

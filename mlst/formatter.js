@@ -7,7 +7,7 @@ function getSource(url) {
   return url;
 }
 
-function format({ st, url, genes, alleles }) {
+function format({ st, url, genes, alleles, schemeSize }) {
   const formattedAlleles = [];
   const matches = [];
 
@@ -28,6 +28,7 @@ function format({ st, url, genes, alleles }) {
     source: getSource(url),
     alleles: formattedAlleles,
     matches,
+    schemeSize,
   };
 }
 
