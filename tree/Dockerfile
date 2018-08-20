@@ -1,4 +1,6 @@
-FROM registry.gitlab.com/cgps/wgsa-tasks/core:v1 as core
+ARG CORE=v1
+
+FROM registry.gitlab.com/cgps/wgsa-tasks/core:${CORE} as core
 
 FROM golang:1.9-alpine as go
 
