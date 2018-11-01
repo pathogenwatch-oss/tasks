@@ -1,4 +1,4 @@
-ARG CORE=v1
+ARG CORE=v1.0.2
 
 FROM registry.gitlab.com/cgps/wgsa-tasks/core:${CORE} as core
 
