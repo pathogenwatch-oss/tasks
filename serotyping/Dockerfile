@@ -1,5 +1,5 @@
 FROM ummidock/sistr_cmd:1.0.2
 
-COPY . /opt/wgsa
+COPY . /opt/pathogenwatch
 
-CMD [ "sh", "/opt/wgsa/index.sh" ]
+CMD [ "sh", "/opt/pathogenwatch/index.sh" ]
