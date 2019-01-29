@@ -4,6 +4,6 @@ task=$1
 tag=$2
 
 cd $task
-docker build -t registry.gitlab.com/cgps/wgsa-tasks/$tag .
-docker push registry.gitlab.com/cgps/wgsa-tasks/$tag
+docker build -t registry.gitlab.com/cgps/pathogenwatch-tasks/$task:$tag .
+docker push registry.gitlab.com/cgps/pathogenwatch-tasks/$task:$tag
 cd ..
