@@ -26,6 +26,8 @@ console.log(
     speciesName: results.speciesScientificName,
     genusId: results.genusTaxId ? results.genusTaxId.toString() : undefined,
     genusName: results.genusScientificName || undefined,
+    superkingdomId: results.superkingdomTaxId ? results.superkingdomTaxId.toString() : undefined,
+    superkingdomName: results.superkingdomName || undefined,
     referenceId: results.refseqId,
     mashDistance: results.mashDistance,
     pValue: results.pValue,
