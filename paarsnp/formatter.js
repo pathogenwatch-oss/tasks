@@ -14,6 +14,7 @@ function format(result) {
     paar: result.paarElementIds || [],
     snp: result.snparElementIds || [],
     matches: result.matches.concat(result.variantMatches),
+    library: result.library
   };
 }
 
