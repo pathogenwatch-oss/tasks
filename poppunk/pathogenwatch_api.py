@@ -75,10 +75,9 @@ def main(tmp_dir):
     if pd.isna(gpsc_assigned):
         gpsc = 'novel'
     else:
-        gpsc = gpsc_assigned.split(";")
-
+        gpsc = min(map(int, gpsc_assigned.split(";")))
     # stream results out
-    results = {'strain': gpsc}
+    results = {'strain': str(gpsc)}
     json.dump(results, sys.stdout)
 
 if __name__ == "__main__":
