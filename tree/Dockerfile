@@ -1,6 +1,6 @@
-ARG CORE=v1.0.2
+ARG CORE=v1.0.8
 
-FROM registry.gitlab.com/cgps/wgsa-tasks/core:${CORE} as core
+FROM registry.gitlab.com/cgps/pathogenwatch-tasks/core:${CORE} as core
 
 FROM golang:1.9-alpine as go
 
