@@ -1,4 +1,4 @@
-ARG CORE=v1.0.8
+ARG CORE=v1.0.9
 
 FROM registry.gitlab.com/cgps/pathogenwatch-tasks/core:${CORE} as core
 
