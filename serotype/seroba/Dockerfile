@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/seroba:1.0b
+FROM registry.gitlab.com/cgps/seroba:1.0c
 
 COPY entrypoint.sh /pathogenwatch/entrypoint.sh
 
