@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-version="v0.0.2"
+version="v2.0.0"
 
 docker pull registry.gitlab.com/cgps/cgps-kleborate:${version}
 
