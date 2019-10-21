@@ -4,6 +4,8 @@ function getSource(url) {
   if (/pubmlst\.org/.test(url)) return 'PubMLST';
   if (/pasteur\.fr/.test(url)) return 'Pasteur';
   if (/warwick\.ac\.uk/.test(url)) return 'EnteroBase';
+  if (/cgmlst\.org/.test(url)) return 'Ridom';
+  if (/ngstar/.test(url)) return 'Public Health Agency of Canada';
   return url;
 }
 
