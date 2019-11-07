@@ -1,6 +1,10 @@
-FROM registry.gitlab.com/cgps/cgps-mlst:mlst-201910211136-v2.0.5
+ARG BASE=mlst-201910211136-v2.0.5
+FROM registry.gitlab.com/cgps/cgps-mlst:${BASE}
 
-COPY formatter.js /wgsa/formatter.js
-COPY entrypoint.sh /wgsa/entrypoint.sh
+ARG TASK
+ENV PW_TASK ${TASK:-mlst}
 
-CMD [ "sh", "/wgsa/entrypoint.sh" ]
+COPY formatter.js /pathogenwatch/formatter.js
+COPY entrypoint.sh /pathogenwatch/entrypoint.sh
+
+CMD [ "/pathogenwatch/entrypoint.sh" ]

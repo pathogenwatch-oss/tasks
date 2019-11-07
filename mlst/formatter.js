@@ -1,4 +1,34 @@
-const fs = require('fs');
+const customUrls = {
+  470: {
+    mlst: 'https://pubmlst.org/bigsdb?db=pubmlst_abaumannii_oxford_seqdef',
+    mlst2: 'https://pubmlst.org/bigsdb?db=pubmlst_abaumannii_pasteur_seqdef'
+  }
+}
+
+function getCustomURL(speciesId, task) {
+  if (speciesId in customUrls && task in customUrls[speciesId]) {
+    return customUrls[speciesId][task];
+  }
+  return null;
+}
+
+const customSources = {
+  666: {
+    mlst: 'Non-O1/O139',
+    mlst2: 'O1/O139',
+  },
+  470: {
+    mlst: 'Oxford',
+    mlst2: 'Pasteur',
+  },
+};
+
+function getCustomSource(speciesId, task) {
+  if (speciesId in customSources && task in customSources[speciesId]) {
+    return customSources[speciesId][task];
+  }
+  return null;
+}
 
 function getSource(url) {
   if (/pubmlst\.org/.test(url)) return 'PubMLST';
@@ -24,10 +54,13 @@ function format({ st, url, genes, alleles, schemeSize }) {
     }
   }
 
+  const speciesId = process.argv[2];
+  const task = process.argv[3];
+
   return {
     st,
-    url,
-    source: getSource(url),
+    url: getCustomURL(speciesId, task) || url,
+    source: getCustomSource(speciesId, task) || getSource(url),
     alleles: formattedAlleles,
     matches,
     schemeSize,
