@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/vista:v0.0.1
+FROM registry.gitlab.com/cgps/vista:v0.0.2
 
 COPY entrypoint.sh /entrypoint.sh
 
