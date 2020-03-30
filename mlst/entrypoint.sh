@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e -o pipefail
+
 export ORGANISM_TAXID=$PW_ORGANISM_TAXID
 export SPECIES_TAXID=$PW_SPECIES_TAXID
 export GENUS_TAXID=$PW_GENUS_TAXID

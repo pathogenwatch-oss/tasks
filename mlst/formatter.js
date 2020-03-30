@@ -61,7 +61,7 @@ function format({ st, url, genes, alleles, schemeSize }) {
     st,
     url: getCustomURL(speciesId, task) || url,
     source: getCustomSource(speciesId, task) || getSource(url),
-    alleles: formattedAlleles,
+    alleles: task === 'cgmlst' ? undefined : formattedAlleles,
     matches,
     schemeSize,
   };
