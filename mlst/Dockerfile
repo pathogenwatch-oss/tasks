@@ -1,4 +1,4 @@
-ARG BASE=mlst-201910211136-v2.1.1
+ARG BASE=mlst-202003121126-v2.3.1
 FROM registry.gitlab.com/cgps/cgps-mlst:${BASE}
 
 ARG TASK
