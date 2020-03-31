@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TASK=${1:-mlst}
-VERSION=${2:-202003121126-v2.3.1}
+VERSION=${2:-202003121126-v2.3.2}
 
 docker build \
   --build-arg BASE=$TASK-$VERSION \
