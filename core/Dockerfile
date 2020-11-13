@@ -1,4 +1,4 @@
-ARG BASE=v0.2.18
+ARG BASE=v0.2.19
 
 FROM registry.gitlab.com/cgps/cgps-core-fp:${BASE}
 
