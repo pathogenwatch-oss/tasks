@@ -1,4 +1,4 @@
-ARG CORE=v1.0.10
+ARG CORE=v1.0.11
 
 FROM registry.gitlab.com/cgps/pathogenwatch-tasks/core:${CORE} as core
 
@@ -13,7 +13,7 @@ COPY get-kernel-size.go /wgsa/get-kernel-size.go
 RUN cd /wgsa && go build /wgsa/get-kernel-size.go
 RUN chmod +x /wgsa/get-kernel-size
 
-FROM conoria/alpine-r
+FROM rocker/r-base
 
 # Install ape, phangorn, and jsonlite
 RUN echo "install.packages('ape', repos='http://cran.ma.imperial.ac.uk')" | /usr/bin/R --vanilla &&\
