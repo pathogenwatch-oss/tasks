@@ -29,6 +29,6 @@ async function saveSamFiles(readStream) {
 }
 
 Promise.resolve(process.stdin)
-  .then((stream) =>stream.pipe(new BsonStream()))
+  .then((stream) => stream.pipe(new BsonStream()))
   .then(saveSamFiles)
   .catch(console.error);
