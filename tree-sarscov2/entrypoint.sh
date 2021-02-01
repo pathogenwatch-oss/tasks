@@ -7,9 +7,9 @@ mkdir -p /sam /align
 node /save-sam-files.js /sam
 
 # To convert sam to fasta
-for sameFile in /sam/*.sam
+for samFile in /sam/*.sam
 do
-  datafunk sam_2_fasta -s ${sameFile} -r wuhan-reference.fasta -o ${sameFile}.fasta --pad
+  datafunk sam_2_fasta -s ${samFile} -r wuhan-reference.fasta -o ${samFile}.fasta --pad
 done
 
 # # To filter fastas
