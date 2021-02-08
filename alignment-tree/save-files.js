@@ -1,18 +1,17 @@
 const BsonStream = require('bson-stream');
 const fs = require('fs');
-const path = require('path');
 
-const samFolder = process.argv[2];
+const outputFolder = process.argv[2];
 
-function renameSam(originalSamFile, label) {
+function saveFile(originalSamFile, label) {
   const lines = originalSamFile.split(/\r?\n/);
-  const cells = lines[2].split("\t");
-  cells[0] = label;
-  lines[2] = cells.join("\t");
-  return lines.join("\n");
+  lines[0] = `>${label}`;
+
+  process.stdout.write(lines.join("\n"));
+  process.stdout.write("\n");
 }
 
-async function saveSamFiles(readStream) {
+async function saveAlignmentFiles(readStream) {
   const ids = [];
 
   for await (const chunk of readStream) {
@@ -29,10 +28,7 @@ async function saveSamFiles(readStream) {
       // this is a core profile chunk
       for (const [ fileId, genomeId ] of ids) {
         if (fileId === chunk.fileId) {
-          const filePath = path.join(samFolder, `${genomeId}.sam`);
-          const sam = renameSam(chunk.analysis.core.sam, genomeId);
-          // console.error('writing file', filePath, chunk.fileId);
-          await fs.promises.writeFile(filePath, sam);    
+          saveFile(chunk.analysis.alignment.fasta, genomeId);
         }
       }
     }
@@ -43,5 +39,5 @@ async function saveSamFiles(readStream) {
 
 Promise.resolve(process.stdin)
   .then((stream) => stream.pipe(new BsonStream()))
-  .then(saveSamFiles)
+  .then(saveAlignmentFiles)
   .catch(console.error);

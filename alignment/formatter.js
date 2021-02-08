@@ -26,7 +26,7 @@ function read(stdin) {
 
 function createJsonDocument(input) {
   return {
-    sam: input,
+    fasta: input,
   };
 }
 
