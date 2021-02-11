@@ -1,1 +1,4 @@
+.dockerignore
+.gitignore
+Dockerfile
 test

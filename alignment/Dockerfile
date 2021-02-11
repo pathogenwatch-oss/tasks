@@ -1,24 +1,17 @@
 FROM ubuntu
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update 
-RUN apt-get install -y python3 python3-pip
-RUN apt-get install -y curl git
-
-RUN git clone --depth 1 -b master https://github.com/cov-ert/datafunk.git /datafunk && cd /datafunk/ && pip3 install .
+RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN curl -L https://github.com/lh3/minimap2/releases/download/v2.17/minimap2-2.17_x64-linux.tar.bz2 | tar -jxvf - && mv ./minimap2-2.17_x64-linux/minimap2 /bin/minimap2
 
-ADD https://nodejs.org/dist/v14.15.4/node-v14.15.4-linux-x64.tar.gz /node.tar.gz
-RUN tar -xzf node.tar.gz --directory /usr/local --strip-components 1 && rm /node.tar.gz
+RUN curl -L https://github.com/cov-ert/gofasta/releases/download/v0.0.3/gofasta-linux-amd64 > /bin/gofasta && chmod +x /bin/gofasta
 
-COPY formatter.js /formatter.js
+RUN curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
+
 COPY NC_045512.2.fasta /wuhan-reference.fasta
-COPY entrypoint.sh /entrypoint.sh
-
-ENTRYPOINT []
 
 WORKDIR /
 
-CMD ["/entrypoint.sh"]
+CMD /bin/minimap2 -a -x asm5 /wuhan-reference.fasta - | \
+    /bin/gofasta sam toMultiAlign --reference /wuhan-reference.fasta |  \
+    jq --raw-input --slurp --compact-output '{ fasta: .  }'
