@@ -3,13 +3,10 @@
 set -e
 
 # concatenate input
-node /save-files.js > all-aligned.fasta
-
+node /save-files.js | \
 # Build Tree
-FastTree -gtr -nosupport -nt all-aligned.fasta > output.tree #2> log
-
+cat wuhan-reference.fasta - | FastTree -gtr -nosupport -nt | \
 # Root tree
-# clusterfunk root --in-format newick -i output.tree --out-format newick -o tree.nwk
-mv output.tree tree.nwk
-
-cat tree.nwk | node newick-to-json.js
+python prune-tree.py | \
+# to json
+jq --raw-input --slurp --compact-output '{ newick: .  }'

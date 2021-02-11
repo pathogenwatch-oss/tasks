@@ -1,28 +1,23 @@
-FROM ubuntu
+FROM python:3.8.7-slim
 
-ARG DEBIAN_FRONTEND=noninteractive
+WORKDIR /
 
-RUN apt-get update 
-RUN apt-get install -y python3 python3-pip
-RUN apt-get install -y curl git
-
-RUN git clone --depth 1 -b master https://github.com/cov-ert/datafunk.git /datafunk && cd /datafunk/ && pip3 install .
-
-RUN git clone --depth 1 -b master https://github.com/cov-ert/clusterfunk.git /clusterfunk && cd /clusterfunk/ && pip3 install .
+RUN apt-get update && apt-get install -y curl && apt-get clean
 
 RUN curl https://nodejs.org/dist/v14.15.4/node-v14.15.4-linux-x64.tar.gz | tar -xz --directory /usr/local --strip-components 1
 RUN npm install bson-stream
 
-RUN apt-get install -y time
+RUN curl -L http://www.microbesonline.org/fasttree/FastTreeDbl > /bin/FastTree && chmod +x /bin/FastTree
 
-ADD http://www.microbesonline.org/fasttree/FastTreeDbl /bin/FastTree
-RUN chmod +x /bin/FastTree
+RUN curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
 
+RUN pip install ete3 six numpy
+
+COPY NC_045512.2.fasta /wuhan-reference.fasta
 COPY save-files.js /save-files.js
-COPY newick-to-json.js /newick-to-json.js
-COPY entrypoint.sh /entrypoint.sh
+COPY prune-tree.py /prune-tree.py
 
-ENTRYPOINT []
-WORKDIR /
-
-CMD ["/entrypoint.sh"]
+CMD node /save-files.js | \
+    cat wuhan-reference.fasta - | FastTree -gtr -nosupport -nt | \
+    python prune-tree.py | \
+    jq --raw-input --slurp --compact-output '{ newick: .  }'
