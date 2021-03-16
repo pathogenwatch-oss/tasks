@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-version="0.0.8"
+version="0.1.0"
 
 docker pull registry.gitlab.com/cgps/cog-uk/type_variants:${version}
 
