@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=202011162032-v2.6.3
+VERSION=202011162032-v2.7.0
 
 cd ../mlst
 docker build \
