@@ -1,10 +1,4 @@
-FROM node:8-slim as node
-
-FROM registry.gitlab.com/cgps/cgps-paarsnp:v2.2.6
-
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
-
-COPY formatter.js /wgsa/formatter.js
+FROM registry.gitlab.com/cgps/cgps-paarsnp:v3.0.2
 
 COPY entrypoint.sh /wgsa/entrypoint.sh
 
