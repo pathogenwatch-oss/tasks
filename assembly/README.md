@@ -8,6 +8,7 @@ Version | Nextflow Version | Pipeline Version | Notes
 -|-|-|-
 v0 | 21.04.1 | 2.1.0 |
 v1 | 21.04.1 | 2.1.0 | Use careful flag, don't retry
+v2 | 21.04.1 | 2.1.0 | Make container layers more reusable
 
 ## Building
 

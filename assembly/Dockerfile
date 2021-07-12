@@ -17,9 +17,9 @@ RUN set -x && \
 
 ENV NXF_HOME=/pipelines/.nextflow
 
+RUN /nextflow info
 COPY ./entrypoint.sh ./local.config /pipelines/
 RUN chmod +rx /pipelines/entrypoint.sh && \
-    /nextflow info && \
     chown -R cgps-user:cgps-user /data /pipelines
 
 ENV NXF_OFFLINE=TRUE

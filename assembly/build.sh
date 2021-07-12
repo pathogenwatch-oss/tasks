@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-VERSION=v1
+VERSION=v2
 
 docker build \
   --build-arg NF_VERSION=21.04.1 \
