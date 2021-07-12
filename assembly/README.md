@@ -4,9 +4,10 @@ This pipeline is based on https://gitlab.com/cgps/ghru/pipelines/dsl2/pipelines/
 
 ## Versions
 
-Version | Nextflow Version | Pipeline Version
--|-|-
-v0 | 21.04.1 | 2.1.0
+Version | Nextflow Version | Pipeline Version | Notes
+-|-|-|-
+v0 | 21.04.1 | 2.1.0 |
+v1 | 21.04.1 | 2.1.0 | Use careful flag, don't retry
 
 ## Building
 

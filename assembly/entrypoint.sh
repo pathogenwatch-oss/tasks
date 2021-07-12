@@ -13,6 +13,7 @@ cat | tar -x -C /data/reads
   /nextflow run main.nf \
     -c /pipelines/local.config \
     -work-dir /data/workdir \
+    --careful \
     --input_dir /data/reads \
     --output_dir /data/output \
     --pipeline_info /data/output/info \
