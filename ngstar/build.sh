@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cd ../mlst
-./build.sh ngstar 202004091529-v2.4.0
+./build.sh ngstar 202109161214-v2.8.0
 cd -
