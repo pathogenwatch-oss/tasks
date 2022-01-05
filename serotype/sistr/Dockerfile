@@ -1,4 +1,4 @@
-FROM ummidock/sistr_cmd:1.0.2
+FROM staphb/sistr:1.1.1
 
 COPY . /opt/pathogenwatch
 
