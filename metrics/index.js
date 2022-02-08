@@ -1,9 +1,8 @@
+// const fs = require('fs').promises;
 
 /**
  * N.B. This file is used by the middle-end, please be careful ES6 features
  */
-
-const DNA_SEQUENCE_REGEX = /^[CTAGNUXRY]+$/i;
 
 function extractContigsFromFastaFileString(fastaFileString) {
   //
@@ -20,25 +19,18 @@ function splitContigIntoParts(contig) {
   return contig.split(/\n/)
     .filter(function (part) {
       // Filter out empty parts
-      return (part.length > 0);
+      return (part.length > 0 && !(part.startsWith(';')));
     })
     .map(function (contigPart) {
       return contigPart.trim();
     });
 }
 
-function extractDnaStringIdFromContig(contig) {
-  const contigParts = splitContigIntoParts(contig);
-
-  // Parse DNA string id
-  return contigParts[0].trim().replace('>', '');
-}
-
 function extractDnaStringFromContig(contig) {
   const contigParts = splitContigIntoParts(contig);
   //
   // DNA sequence can contain:
-  // 1) [CTAGNUX] characters.
+  // 1) "Whatever has been allowed upstream" characters.
   // 2) White spaces (e.g.: new line characters).
   //
   // The first line of FASTA file contains id and description.
@@ -55,15 +47,9 @@ function extractDnaStringFromContig(contig) {
   // -----------------------------
   //
   // Create sub array of the contig parts array - cut the first element (id and description).
-  var contigPartsWithNoIdAndDescription = contigParts.splice(1, contigParts.length);
+  const contigPartsWithNoIdAndDescription = contigParts.splice(1, contigParts.length);
   //
-  // Very rarely the second line can be a comment
-  // If the first element won't match regex then assume it is a comment
-  //
-  if (! DNA_SEQUENCE_REGEX.test(contigPartsWithNoIdAndDescription[0].trim())) {
-    // Remove comment element from the array
-    contigPartsWithNoIdAndDescription = contigPartsWithNoIdAndDescription.splice(1, contigPartsWithNoIdAndDescription.length);
-  }
+
   //
   // Contig string without id, description, comment is only left with DNA sequence string(s).
   //
@@ -75,24 +61,13 @@ function extractDnaStringFromContig(contig) {
 }
 
 function extractDnaStringsFromContigs(contigs) {
-  var dnaStrings = [],
-    dnaString;
+  const dnaStrings = [];
+  let dnaString;
   contigs.forEach(function (contig) {
     dnaString = extractDnaStringFromContig(contig);
     dnaStrings.push(dnaString);
   });
   return dnaStrings;
-}
-
-function isValidDnaString(dnaString) {
-  return DNA_SEQUENCE_REGEX.test(dnaString);
-}
-
-function isValidContig(contig) {
-  var contigParts = splitContigIntoParts(contig);
-  var dnaString = extractDnaStringFromContig(contig);
-
-  return (contigParts.length > 1 && isValidDnaString(dnaString));
 }
 
 function calculateN50(dnaSequenceStrings) {
@@ -102,28 +77,28 @@ function calculateN50(dnaSequenceStrings) {
   //
 
   // Order array by sequence length DESC
-  var sortedDnaSequenceStrings = dnaSequenceStrings.sort(function (a, b) {
+  const sortedDnaSequenceStrings = dnaSequenceStrings.sort(function (a, b) {
     return b.length - a.length;
   });
 
-  // Calculate sums of all nucleotides in this assembly by adding current contig's length to the sum of all previous contig lengths
+  // Calculate sums of all nucleotides in this assembly by adding current contigs length to the sum of all previous contig lengths
   // Contig length === number of nucleotides in this contig
-  var assemblyNucleotideSums = [],
-  // Count sorted dna sequence strings
+  let assemblyNucleotideSums = [],
+    // Count sorted dna sequence strings
     sortedDnaSequenceStringCounter = 0;
 
   for (; sortedDnaSequenceStringCounter < sortedDnaSequenceStrings.length; sortedDnaSequenceStringCounter++) {
     if (assemblyNucleotideSums.length > 0) {
-      // Add current contig's length to the sum of all previous contig lengths
+      // Add current contigs length to the sum of all previous contig lengths
       assemblyNucleotideSums.push(sortedDnaSequenceStrings[sortedDnaSequenceStringCounter].length + assemblyNucleotideSums[assemblyNucleotideSums.length - 1]);
     } else {
-      // This is a "sum" of a single contig's length
+      // This is a "sum" of a single contigs length
       assemblyNucleotideSums.push(sortedDnaSequenceStrings[sortedDnaSequenceStringCounter].length);
     }
   }
 
   // Calculate one-half of the total sum of all nucleotides in the assembly
-  var assemblyNucleotidesHalfSum = Math.floor(assemblyNucleotideSums[assemblyNucleotideSums.length - 1] / 2);
+  const assemblyNucleotidesHalfSum = Math.floor(assemblyNucleotideSums[assemblyNucleotideSums.length - 1] / 2);
 
   //
   // Sum lengths of every contig starting from the longest contig
@@ -131,21 +106,21 @@ function calculateN50(dnaSequenceStrings) {
   //
 
   // Store nucleotides sum
-  var assemblyNucleotidesSum = 0,
-  // N50 object
+  let n50Sum = 0,
+    // N50 object
     assemblyN50 = {},
-  // Count again sorted dna sequence strings
-    sortedDnaSequenceStringCounter = 0;
+    // Count again sorted dna sequence strings
+    n50Counter = 0;
 
-  for (; sortedDnaSequenceStringCounter < sortedDnaSequenceStrings.length; sortedDnaSequenceStringCounter++) {
+  for (; n50Counter < sortedDnaSequenceStrings.length; n50Counter++) {
     // Update nucleotides sum
-    assemblyNucleotidesSum = assemblyNucleotidesSum + sortedDnaSequenceStrings[sortedDnaSequenceStringCounter].length;
+    n50Sum = n50Sum + sortedDnaSequenceStrings[n50Counter].length;
     // Contig N50 of an assembly is the length of the shortest contig in this list
     // Check if current sum of nucleotides is greater or equals to half sum of nucleotides in this assembly
-    if (assemblyNucleotidesSum >= assemblyNucleotidesHalfSum) {
-      assemblyN50['sequenceNumber'] = sortedDnaSequenceStringCounter + 1;
-      assemblyN50['sum'] = assemblyNucleotidesSum;
-      assemblyN50['sequenceLength'] = sortedDnaSequenceStrings[sortedDnaSequenceStringCounter].length;
+    if (n50Sum >= assemblyNucleotidesHalfSum) {
+      assemblyN50['sequenceNumber'] = n50Counter + 1;
+      assemblyN50['sum'] = n50Sum;
+      assemblyN50['sequenceLength'] = sortedDnaSequenceStrings[n50Counter].length;
       break;
     }
   }
@@ -154,54 +129,41 @@ function calculateN50(dnaSequenceStrings) {
 }
 
 function calculateTotalNumberOfNucleotidesInDnaStrings(dnaStrings) {
-  var totalNumberOfNucleotidesInDnaStrings = 0;
-  dnaStrings.forEach(function (dnaString, index, array) {
+  let totalNumberOfNucleotidesInDnaStrings = 0;
+  dnaStrings.forEach((dnaString) => {
     totalNumberOfNucleotidesInDnaStrings = totalNumberOfNucleotidesInDnaStrings + dnaString.length;
   });
   return totalNumberOfNucleotidesInDnaStrings;
-
-  //
-  // Reduce doesn't seem to work as expected
-  //
-  // var totalNumberOfNucleotidesInDnaStrings = dnaStrings.reduce(function(previousDnaString, currentDnaString, index, array) {
-  //     return previousDnaString.length + currentDnaString.length;
-  // }, '');
-  // return totalNumberOfNucleotidesInDnaStrings;
 }
 
 function calculateTotalNumberOfNsInDnaStrings(dnaStrings) {
-  var totalNumberOfNsInDnaStrings = 0;
-  dnaStrings.forEach(function (dnaString, index, array) {
+  let totalNumberOfNsInDnaStrings = 0;
+  dnaStrings.forEach((dnaString) => {
     totalNumberOfNsInDnaStrings = totalNumberOfNsInDnaStrings + (dnaString.match(/[^ACGT]/g) || []).length;
   });
   return totalNumberOfNsInDnaStrings;
 }
 
 function calculateAverageNumberOfNucleotidesInDnaStrings(dnaStrings) {
-  var totalNumberOfNucleotidesInDnaStrings = calculateTotalNumberOfNucleotidesInDnaStrings(dnaStrings);
-  var numberOfDnaStrings = dnaStrings.length;
-  var averageNumberOfNucleotidesInDnaStrings = Math.floor(totalNumberOfNucleotidesInDnaStrings / numberOfDnaStrings);
-  return averageNumberOfNucleotidesInDnaStrings;
+  const totalNumberOfNucleotidesInDnaStrings = calculateTotalNumberOfNucleotidesInDnaStrings(dnaStrings);
+  const numberOfDnaStrings = dnaStrings.length;
+  return Math.floor(totalNumberOfNucleotidesInDnaStrings / numberOfDnaStrings);
 }
 
 function calculateSmallestNumberOfNucleotidesInDnaStrings(dnaStrings) {
-  var numberOfNucleotidesInDnaStrings = dnaStrings.map(function (dnaString) {
+  const numberOfNucleotidesInDnaStrings = dnaStrings.map(function (dnaString) {
     return dnaString.length;
   });
-  var smallestNumberOfNucleotidesInDnaStrings = numberOfNucleotidesInDnaStrings.reduce(function (previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString, index, array) {
+  return numberOfNucleotidesInDnaStrings.reduce(function (previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString) {
     return Math.min(previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString);
   });
-  return smallestNumberOfNucleotidesInDnaStrings;
 }
 
 function calculateBiggestNumberOfNucleotidesInDnaStrings(dnaStrings) {
-  var numberOfNucleotidesInDnaStrings = dnaStrings.map(function (dnaString) {
+  const numberOfNucleotidesInDnaStrings = dnaStrings.map(function (dnaString) {
     return dnaString.length;
   });
-  var biggestNumberOfNucleotidesInDnaStrings = numberOfNucleotidesInDnaStrings.reduce(function (previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString, index, array) {
-    return Math.max(previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString);
-  });
-  return biggestNumberOfNucleotidesInDnaStrings;
+  return numberOfNucleotidesInDnaStrings.reduce((previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString) => Math.max(previousNumberOfNucleotidesInDnaString, currentNumberOfNucleotidesInDnaString));
 }
 
 function calculateSumsOfNucleotidesInDnaStrings(dnaStrings) {
@@ -212,15 +174,15 @@ function calculateSumsOfNucleotidesInDnaStrings(dnaStrings) {
   //
   // Sort dna strings by their length
   //
-  var sortedDnaStrings = dnaStrings.sort(function (a, b) {
+  const sortedDnaStrings = dnaStrings.sort(function (a, b) {
     return b.length - a.length;
   });
 
   //
-  // Calculate sums of all nucleotides in this assembly by adding current contig's length to the sum of all previous contig lengths
+  // Calculate sums of all nucleotides in this assembly by adding current contigs length to the sum of all previous contig lengths
   //
-  var sumsOfNucleotidesInDnaStrings = [];
-  sortedDnaStrings.forEach(function (sortedDnaString, index, array) {
+  const sumsOfNucleotidesInDnaStrings = [];
+  sortedDnaStrings.forEach((sortedDnaString) => {
     if (sumsOfNucleotidesInDnaStrings.length === 0) {
       sumsOfNucleotidesInDnaStrings.push(sortedDnaString.length);
     } else {
@@ -232,10 +194,10 @@ function calculateSumsOfNucleotidesInDnaStrings(dnaStrings) {
 }
 
 function calculateGCContent(dnaSequenceStrings) {
-  var count = 0;
+  let count = 0;
   dnaSequenceStrings.forEach(sequenceString => {
-    for (var i = 0; i < sequenceString.length; i++) {
-      var char = sequenceString[i];
+    for (let i = 0; i < sequenceString.length; i++) {
+      const char = sequenceString[i];
       if (char === 'C' || char === 'G') {
         count++;
       }
@@ -244,38 +206,6 @@ function calculateGCContent(dnaSequenceStrings) {
   return count;
 }
 
-function validateContigs(contigs) {
-  var validatedContigs = {
-    valid: [],
-    invalid: []
-  };
-
-  //
-  // Validate each contig
-  //
-  contigs.forEach(function (contig, index, contigs) {
-    var contigParts = splitContigIntoParts(contig);
-    var dnaString = extractDnaStringFromContig(contig);
-    var dnaStringId = extractDnaStringIdFromContig(contig);
-
-    // Valid contig
-    if (isValidContig(contig)) {
-      validatedContigs.valid.push({
-        id: dnaStringId,
-        dnaString: dnaString,
-      });
-
-      // Invalid contig
-    } else {
-      validatedContigs.invalid.push({
-        id: dnaStringId,
-        dnaString: dnaString,
-      });
-    }
-  });
-
-  return validatedContigs;
-}
 
 function analyseFasta(fastaFileString) {
   const contigs = extractContigsFromFastaFileString(fastaFileString);
@@ -310,6 +240,10 @@ function analyseFasta(fastaFileString) {
   };
 }
 
+
 require('get-stdin')()
+// const file = 'test.fasta';
+// fs.readFile(file)
+//   .then(buffer => buffer.toString())
   .then(analyseFasta)
   .then(metrics => console.log(JSON.stringify(metrics)));

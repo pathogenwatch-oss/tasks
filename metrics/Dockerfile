@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:17.4.0-alpine
 
 COPY . /opt/wgsa
 
