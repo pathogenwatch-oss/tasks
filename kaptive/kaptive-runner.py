@@ -12,7 +12,6 @@ import click as click
 
 def run_kaptive(fasta_path: str, database_path: str, uuid: str) -> Tuple[Optional[str], Dict[str, str]]:
     os.mkdir(f'/tmp/{uuid}')
-    print(f'Running {fasta_path} against {database_path}', file=sys.stderr)
     output = subprocess.run(
         [
             './kaptive.py',
@@ -30,7 +29,6 @@ def run_kaptive(fasta_path: str, database_path: str, uuid: str) -> Tuple[Optiona
             record = row
             fieldnames.pop(0)
             del record['Assembly']
-            print(f'${fieldnames}\n')
             return fieldnames, record
 
 
@@ -40,7 +38,6 @@ def run_type(fasta_path: str, database_path: str, locus) -> Tuple:
         os.path.join(database_path, f'Acinetobacter_baumannii_{locus}_primary_reference.gbk'),
         locus
     )
-    print(f'{locus}:\n{json.dumps(kaptive_result)}', file=sys.stderr)
     return kaptive_result
 
 
@@ -73,5 +70,4 @@ def run_fasta(fasta_path: str, database_path: str):
 
 
 if __name__ == '__main__':
-    print('Starting', file=sys.stderr)
     run_fasta()
