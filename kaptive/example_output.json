@@ -1,1 +1,57 @@
-{"kaptive_version": "v2.0.0", "columns": ["Best match locus", "Best match type", "Match confidence", "Problems", "Coverage", "Identity", "Length discrepancy", "Expected genes in locus", "Expected genes in locus, details", "Missing expected genes", "Other genes in locus", "Other genes in locus, details", "Expected genes outside locus", "Expected genes outside locus, details", "Other genes outside locus", "Other genes outside locus, details"], "k_locus": {"Best match locus": "KL1", "Best match type": "", "Match confidence": "Perfect", "Problems": "", "Coverage": "100.00%", "Identity": "100.00%", "Length discrepancy": "0 bp", "Expected genes in locus": "18 / 18 (100%)", "Expected genes in locus, details": "KL1_01_wzc,100.0%;KL1_02_wzb,100.0%;KL1_03_wza,100.0%;KL1_04_gna,100.0%;KL1_05_gne2,100.0%;KL1_06_wzx,100.0%;KL1_07_gtr1,100.0%;KL1_08_wzy,100.0%;KL1_09_atr1,100.0%;KL1_10_gtr2,100.0%;KL1_11_itrA1,100.0%;KL1_12_qhbA,100.0%;KL1_13_qhbB,100.0%;KL1_14_gdr,100.0%;KL1_15_galU,100.0%;KL1_16_ugd,100.0%;KL1_17_gpi,100.0%;KL1_18_pgm,100.0%", "Missing expected genes": "", "Other genes in locus": "0", "Other genes in locus, details": "", "Expected genes outside locus": "0 / 18 (0%)", "Expected genes outside locus, details": "", "Other genes outside locus": "0", "Other genes outside locus, details": ""}, "o_locus": {"Best match locus": "OCL1", "Best match type": "", "Match confidence": "Very high", "Problems": "", "Coverage": "100.00%", "Identity": "99.99%", "Length discrepancy": "0 bp", "Expected genes in locus": "9 / 9 (100%)", "Expected genes in locus, details": "OCL1_01_gtrOC1,100.0%;OCL1_02_gtrOC2,100.0%;OCL1_03_pda1,100.0%;OCL1_04_gtrOC3,100.0%;OCL1_05_gtrOC4,100.0%;OCL1_06_orf1(ghy),100.0%;OCL1_07_gtrOC5,100.0%;OCL1_08_gtrOC6,100.0%;OCL1_09_gtrOC7,100.0%", "Missing expected genes": "", "Other genes in locus": "0", "Other genes in locus, details": "", "Expected genes outside locus": "0 / 9 (0%)", "Expected genes outside locus, details": "", "Other genes outside locus": "0", "Other genes outside locus, details": ""}}
+{
+  "kaptive_version": "v2.0.0",
+  "columns": [
+    "Best match locus",
+    "Best match type",
+    "Match confidence",
+    "Problems",
+    "Coverage",
+    "Identity",
+    "Length discrepancy",
+    "Expected genes in locus",
+    "Expected genes in locus, details",
+    "Missing expected genes",
+    "Other genes in locus",
+    "Other genes in locus, details",
+    "Expected genes outside locus",
+    "Expected genes outside locus, details",
+    "Other genes outside locus",
+    "Other genes outside locus, details"
+  ],
+  "k_locus": {
+    "Best match locus": "KL1",
+    "Best match type": "",
+    "Match confidence": "Perfect",
+    "Problems": "",
+    "Coverage": "100.00%",
+    "Identity": "100.00%",
+    "Length discrepancy": "0 bp",
+    "Expected genes in locus": "18 / 18 (100%)",
+    "Expected genes in locus, details": "KL1_01_wzc,100.0%;KL1_02_wzb,100.0%;KL1_03_wza,100.0%;KL1_04_gna,100.0%;KL1_05_gne2,100.0%;KL1_06_wzx,100.0%;KL1_07_gtr1,100.0%;KL1_08_wzy,100.0%;KL1_09_atr1,100.0%;KL1_10_gtr2,100.0%;KL1_11_itrA1,100.0%;KL1_12_qhbA,100.0%;KL1_13_qhbB,100.0%;KL1_14_gdr,100.0%;KL1_15_galU,100.0%;KL1_16_ugd,100.0%;KL1_17_gpi,100.0%;KL1_18_pgm,100.0%",
+    "Missing expected genes": "",
+    "Other genes in locus": "0",
+    "Other genes in locus, details": "",
+    "Expected genes outside locus": "0 / 18 (0%)",
+    "Expected genes outside locus, details": "",
+    "Other genes outside locus": "0",
+    "Other genes outside locus, details": ""
+  },
+  "o_locus": {
+    "Best match locus": "OCL1",
+    "Best match type": "",
+    "Match confidence": "Very high",
+    "Problems": "",
+    "Coverage": "100.00%",
+    "Identity": "99.99%",
+    "Length discrepancy": "0 bp",
+    "Expected genes in locus": "9 / 9 (100%)",
+    "Expected genes in locus, details": "OCL1_01_gtrOC1,100.0%;OCL1_02_gtrOC2,100.0%;OCL1_03_pda1,100.0%;OCL1_04_gtrOC3,100.0%;OCL1_05_gtrOC4,100.0%;OCL1_06_orf1(ghy),100.0%;OCL1_07_gtrOC5,100.0%;OCL1_08_gtrOC6,100.0%;OCL1_09_gtrOC7,100.0%",
+    "Missing expected genes": "",
+    "Other genes in locus": "0",
+    "Other genes in locus, details": "",
+    "Expected genes outside locus": "0 / 9 (0%)",
+    "Expected genes outside locus, details": "",
+    "Other genes outside locus": "0",
+    "Other genes outside locus, details": ""
+  }
+}

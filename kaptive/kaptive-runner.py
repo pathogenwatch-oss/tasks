@@ -30,6 +30,7 @@ def run_kaptive(fasta_path: str, database_path: str, uuid: str) -> Tuple[Optiona
             record = row
             fieldnames.pop(0)
             del record['Assembly']
+            print(f'${fieldnames}\n')
             return fieldnames, record
 
 
@@ -63,10 +64,10 @@ def run_fasta(fasta_path: str, database_path: str):
     results = [run_type(fasta_path, database_path, locus) for locus in ['k_locus', 'OC_locus']]
 
     output = {
-        'kaptive_version': version,
+        'kaptiveVersion': version,
         'columns': results[0][0],
-        'k_locus': results[0][1],
-        'o_locus': results[1][1]
+        'kLocus': results[0][1],
+        'oLocus': results[1][1]
     }
     print(json.dumps(output), file=sys.stdout)
 
