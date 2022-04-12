@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-version="v14.1.0"
+version="v15.0.1"
 
 docker pull registry.gitlab.com/cgps/cog-uk/pangolin:${version}
 
