@@ -1,6 +1,7 @@
-ARG BASE=v0.2.19
+ARG BASE=v2.0.0-5
+ARG SPECIES=1463165
 
-FROM registry.gitlab.com/cgps/cgps-core-fp:${BASE}
+FROM registry.gitlab.com/cgps/cgps-core-fp:${BASE}-${SPECIES}
 
 COPY formatter.js /wgsa/formatter.js
 COPY formatProfile.js /wgsa/formatProfile.js

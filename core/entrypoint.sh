@@ -4,4 +4,4 @@ set -e
 
 cat - > /tmp/${WGSA_FILE_ID}.fasta
 
-node /usr/local/cgps-core-fp/index.js query /tmp/${WGSA_FILE_ID}.fasta | node /wgsa/formatter.js
+/bin/bash /run.sh query /tmp/${WGSA_FILE_ID}.fasta | node /wgsa/formatter.js
