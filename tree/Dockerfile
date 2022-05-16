@@ -1,4 +1,4 @@
-ARG CORE=v2.0.0-5
+ARG CORE=v2.0.0-6
 
 FROM registry.gitlab.com/cgps/cgps-core-fp:schemes-${CORE} as core
 

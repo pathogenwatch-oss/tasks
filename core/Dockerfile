@@ -1,4 +1,4 @@
-ARG BASE=v2.0.0-5
+ARG BASE=v2.0.0-6
 ARG SPECIES=1463165
 
 FROM registry.gitlab.com/cgps/cgps-core-fp:${BASE}-${SPECIES}
