@@ -24,10 +24,11 @@ RUN echo "install.packages('ape', repos='http://cran.ma.imperial.ac.uk')" | /usr
 COPY create-tree.r /wgsa/create-tree.r
 COPY --from=go /wgsa/build-matrix /wgsa/build-matrix
 COPY --from=go /wgsa/get-kernel-size /wgsa/get-kernel-size
-COPY --from=core /schemes/*/*_ks.jsn /wgsa/
-
 COPY entrypoint.sh /wgsa/entrypoint.sh
-
 WORKDIR /wgsa
+
+ARG SPECIES
+
+COPY --from=core /schemes/${SPECIES}/${SPECIES}_ks.jsn /wgsa/${SPECIES}_ks.jsn
 
 CMD ["/wgsa/entrypoint.sh"]
