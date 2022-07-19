@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/cgps/cgps-paarsnp:v3.0.2
+FROM registry.gitlab.com/cgps/cgps-paarsnp:v3.0.3
 
 COPY entrypoint.sh /wgsa/entrypoint.sh
 
