@@ -39,7 +39,7 @@ function getSource(url) {
   return url;
 }
 
-function format({ st, url, genes, alleles, schemeSize }) {
+function format({ st, code, url, genes, alleles, schemeSize }) {
   const formattedAlleles = [];
   const matches = [];
 
@@ -59,6 +59,7 @@ function format({ st, url, genes, alleles, schemeSize }) {
 
   return {
     st,
+    code,
     scheme: url,
     url: getCustomURL(speciesId, task) || url,
     source: getCustomSource(speciesId, task) || getSource(url),

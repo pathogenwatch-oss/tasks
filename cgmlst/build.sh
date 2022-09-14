@@ -2,7 +2,8 @@
 
 VERSION=202209111732-v3.2.0
 
-cd ../mlst
+cd ../mlst || exit
+
 docker build \
   --build-arg BASE="cgmlst:$VERSION" \
   --build-arg TASK=cgmlst \
