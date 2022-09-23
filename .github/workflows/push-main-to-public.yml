@@ -14,7 +14,7 @@ jobs:
       - name: git-sync
         uses: wei/git-sync@v3
         with:
-          source_repo: "pathogenwatch/amr-libraries"
+          source_repo: "https://cgps-admin:${{ secrets.GIT_PUSH_TOKEN }}@github.com/pathogenwatch/tasks.git"
           source_branch: "main"
-          destination_repo: "https://cgps-admin:${{ secrets.GIT_PUSH_TOKEN }}@github.com/pathogenwatch-oss/amr-libraries.git"
+          destination_repo: "https://cgps-admin:${{ secrets.GIT_PUSH_TOKEN }}@github.com/pathogenwatch-oss/tasks.git"
           destination_branch: "main"
