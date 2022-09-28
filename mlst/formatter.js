@@ -39,7 +39,7 @@ function getSource(url) {
   return url;
 }
 
-function format({ st, code, url, genes, alleles, schemeSize }) {
+function format({ st, code, scheme, url, genes, alleles, schemeSize }) {
   const formattedAlleles = [];
   const matches = [];
 
@@ -60,7 +60,7 @@ function format({ st, code, url, genes, alleles, schemeSize }) {
   return {
     st,
     code,
-    scheme: url,
+    scheme: scheme,
     url: getCustomURL(speciesId, task) || url,
     source: getCustomSource(speciesId, task) || getSource(url),
     alleles: task === 'cgmlst' ? undefined : formattedAlleles,
@@ -92,7 +92,7 @@ function read(stdin) {
 			resolve(ret);
 		});
 	});
-};
+}
 
 read(process.stdin)
   .then(JSON.parse)
