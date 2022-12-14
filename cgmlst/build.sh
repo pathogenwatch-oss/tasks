@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=202209111732-v3.2.1
+VERSION=202214121127-v3.2.1
 
 cd ../mlst || exit
 
