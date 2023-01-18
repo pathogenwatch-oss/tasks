@@ -1,4 +1,6 @@
-FROM registry.gitlab.com/cgps/inctyper:v0.0.5
+ARG VERSION
+
+FROM registry.gitlab.com/cgps/inctyper:$VERSION
 
 COPY entrypoint.sh /entrypoint.sh
 
