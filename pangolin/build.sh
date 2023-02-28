@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-version="v19.1.0"
+version=${1:-"v19.2.0"}
 
-docker pull registry.gitlab.com/cgps/cog-uk/pangolin:${version}
+docker pull registry.gitlab.com/cgps/cog-uk/pangolin:"${version}"
 
-docker tag registry.gitlab.com/cgps/cog-uk/pangolin:${version} registry.gitlab.com/cgps/pathogenwatch-tasks/pangolin:${version} \
+docker tag registry.gitlab.com/cgps/cog-uk/pangolin:"${version}" registry.gitlab.com/cgps/pathogenwatch-tasks/pangolin:${version} \
   && docker push registry.gitlab.com/cgps/pathogenwatch-tasks/pangolin:${version}
