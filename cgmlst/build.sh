@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=${1:-202214121127-v3.2.1}
+VERSION=${1:-2023041203-klebsiella_1-v3.2.1}
 
 cd ../mlst || exit
 

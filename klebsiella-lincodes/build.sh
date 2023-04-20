@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=${1:-v2.0.0}
+VERSION=${1:-v4.0.0}
 
 docker pull registry.gitlab.com/cgps/pathogenwatch/analyses/klebsiella-lincodes:"${VERSION}"
 
