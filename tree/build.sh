@@ -10,5 +10,5 @@ fi
 VERSION=${1}
 SPECIES=${2}
 
-docker build --rm --build-arg SPECIES="${SPECIES}" --build-arg CORE="${VERSION}" -t registry.gitlab.com/cgps/pathogenwatch-tasks/core:${VERSION}-${SPECIES} .
+docker build --rm --build-arg SPECIES="${SPECIES}" --build-arg CORE="${VERSION}" -t registry.gitlab.com/cgps/pathogenwatch-tasks/tree:${VERSION}-${SPECIES} .
 docker push registry.gitlab.com/cgps/pathogenwatch-tasks/tree:${VERSION}-${SPECIES}
