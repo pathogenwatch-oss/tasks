@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-AMRSEARCH_VERSION=${1:-v3.0.15}
+AMRSEARCH_VERSION=${1:-v3.0.20}
 PW_VERSION=${2:-${AMRSEARCH_VERSION}}
 
 
