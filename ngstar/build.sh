@@ -1,5 +1,8 @@
 #!/bin/bash
+set -ueo pipefail
 
-cd ../mlst
-./build.sh ngstar 202309071500-ngstar-v3.2.1
-cd -
+VERSION=${1:-231208-v5.3.0}
+
+cd ../mlst || exit
+./build.sh ngstar "${VERSION}"
+cd - || exit
