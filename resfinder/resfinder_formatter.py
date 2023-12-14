@@ -126,7 +126,7 @@ def read_phenotype(
                 .title()
             )
             phenotypes.append(
-                Phenotype(antimicrobials[am], phenotype[2] != "No resistance", [])
+                Phenotype(antimicrobials[am], phenotype[2] != "No resistance" and phenotype[2] != "NA", [])
             )
     return phenotypes
 
