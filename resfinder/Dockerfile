@@ -1,4 +1,4 @@
-ARG VERSION=4.3.3
+ARG VERSION=4.4.2
 
 FROM genomicepidemiology/resfinder:${VERSION}
 

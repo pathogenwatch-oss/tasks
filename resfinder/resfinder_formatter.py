@@ -2,7 +2,6 @@ import csv
 import dataclasses
 import json
 import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Annotated, Any, Iterable, Iterator
@@ -80,11 +79,10 @@ class Phenotype:
 
 
 def read_tab_format(
-    matches: dict[str, list[Match]], location: Path
+        matches: dict[str, list[Match]], location: Path
 ) -> dict[str, GeneMarker]:
     with open(location) as rf_h:
-        reader: Iterator[str] = csv.DictReader(rf_h, delimiter="\t")
-        line: dict[str, str]
+        reader: Iterator[dict[str, str]] = csv.DictReader(rf_h, delimiter="\t")
         return {
             line["Resistance gene"]: GeneMarker(
                 line["Resistance gene"],
@@ -103,16 +101,16 @@ def read_tab_format(
 
 
 def read_resfinder(
-    match_data: dict[str, list[Match]],
-    results_dir: Path,
+        match_data: dict[str, list[Match]],
+        results_dir: Path,
 ) -> dict[str, GeneMarker]:
     return read_tab_format(match_data, results_dir / "ResFinder_results_tab.txt")
 
 
 def read_phenotype(
-    antimicrobials: dict[str, Antimicrobial],
-    results_dir: Path,
-    scheme: str = "salmonella",
+        antimicrobials: dict[str, Antimicrobial],
+        results_dir: Path,
+        scheme: str = "salmonella",
 ) -> list[Phenotype]:
     phenotypes: list[Phenotype] = []
     with open(results_dir / f"pheno_table_{scheme}.txt", "r") as ph_h:
@@ -132,8 +130,8 @@ def read_phenotype(
 
 
 def read_pointfinder(
-    matches: dict[str, list[Match]],
-    results_dir: Path,
+        matches: dict[str, list[Match]],
+        results_dir: Path,
 ) -> dict[str, VariantMarker]:
     markers: dict[str, VariantMarker] = {}
     with open(results_dir / "PointFinder_results.txt", "r") as pf_h:
@@ -156,17 +154,17 @@ def read_pointfinder(
 
 
 def read_disinfinder(
-    matches: dict[str, list[Match]],
-    results_dir: Path,
+        matches: dict[str, list[Match]],
+        results_dir: Path,
 ) -> dict[str, GeneMarker]:
     return read_tab_format(matches, results_dir / "DisinFinder_results_tab.txt")
 
 
 def extend_antibiogram(
-    phenotypes: list[Phenotype],
-    rf_result: Iterable[GeneMarker],
-    pf_result: Iterable[VariantMarker],
-    df_result: Iterable[GeneMarker],
+        phenotypes: list[Phenotype],
+        rf_result: Iterable[GeneMarker],
+        pf_result: Iterable[VariantMarker],
+        df_result: Iterable[GeneMarker],
 ) -> list[Phenotype]:
     phenotypes_map: dict[str, Phenotype] = {
         phenotype.antimicrobial.name: phenotype for phenotype in phenotypes
@@ -193,7 +191,7 @@ def extend_antibiogram(
 
 
 def read_antimicrobials(
-    am_file: Path,
+        am_file: Path,
 ) -> dict[str, Antimicrobial]:
     antimicrobials: dict[str, Antimicrobial] = {}
     with open(am_file) as am_f:
@@ -211,7 +209,7 @@ def read_result_json(results_dir: Path) -> dict[str, Any]:
 
 
 def extract_match_data(
-    matches: dict[str, dict[str, Any]], mutations: Iterator[dict[str, Any]]
+        matches: dict[str, dict[str, Any]], mutations: Iterator[dict[str, Any]]
 ) -> dict[str, list[Match]]:
     # accession_cleaner = re.compile(r"\.\d+$")
 
@@ -269,45 +267,45 @@ def read_variant_effects(phenotypes_file):
 
 
 def main(
-    scheme: Annotated[
-        str,
-        typer.Argument(
-            help="The scheme to use for the phenotype file",
-        ),
-    ],
-    resfinder_directory: Annotated[
-        Path,
-        typer.Option(
-            "-r",
-            help="Location of the Resfinder results directory",
-            exists=True,
-            file_okay=False,
-            dir_okay=True,
-            writable=False,
-            readable=True,
-        ),
-    ] = "resfinder_out",
-    antimicrobials_file: Annotated[
-        Path,
-        typer.Option(
-            "-a",
-            help="Location of the Resfinder antibiotic_classes.txt",
-            exists=True,
-            file_okay=True,
-            dir_okay=False,
-            writable=False,
-            readable=True,
-        ),
-    ] = default_rf_db
-    / "antibiotic_classes.txt",
-    phenotypes_file: Annotated[
-        Path,
-        typer.Option(
-            "-p",
-            help="Location of a pointfinder phenotypes file. Will assume to use the scheme file provided in the image otherwise.",
-            exists=True,
-        ),
-    ] = None,
+        scheme: Annotated[
+            str,
+            typer.Argument(
+                help="The scheme to use for the phenotype file",
+            ),
+        ],
+        resfinder_directory: Annotated[
+            Path,
+            typer.Option(
+                "-r",
+                help="Location of the Resfinder results directory",
+                exists=True,
+                file_okay=False,
+                dir_okay=True,
+                writable=False,
+                readable=True,
+            ),
+        ] = "resfinder_out",
+        antimicrobials_file: Annotated[
+            Path,
+            typer.Option(
+                "-a",
+                help="Location of the Resfinder antibiotic_classes.txt",
+                exists=True,
+                file_okay=True,
+                dir_okay=False,
+                writable=False,
+                readable=True,
+            ),
+        ] = default_rf_db / "antibiotic_classes.txt",
+        phenotypes_file: Annotated[
+            Path,
+            typer.Option(
+                "-p",
+                help=("Location of a pointfinder phenotypes file."
+                      "Will assume to use the scheme file provided in the image otherwise."),
+                exists=True,
+            ),
+        ] = None,
 ):
     if phenotypes_file is None:
         phenotypes_file = default_pf_db / f"{scheme}/phenotypes.txt"
@@ -371,27 +369,27 @@ def main(
             )
 
     acquired: list[FullAcquiredMarker] = [
-        FullAcquiredMarker(
-            marker.name, marker.accession, marker.gene, marker.antibiotics
-        )
-        for marker in rf_result.values()
-        if marker.type == marker_types[0]
-    ] + [
-        FullAcquiredMarker(
-            marker.name, marker.accession, marker.gene, marker.antibiotics
-        )
-        for marker in pf_result.values()
-        if marker.type == marker_types[0]
-    ]
+                                             FullAcquiredMarker(
+                                                 marker.name, marker.accession, marker.gene, marker.antibiotics
+                                             )
+                                             for marker in rf_result.values()
+                                             if marker.type == marker_types[0]
+                                         ] + [
+                                             FullAcquiredMarker(
+                                                 marker.name, marker.accession, marker.gene, marker.antibiotics
+                                             )
+                                             for marker in pf_result.values()
+                                             if marker.type == marker_types[0]
+                                         ]
 
     resistance_profile: list[AntimicrobialPhenotype] = []
     for phenotype in antibiogram:
-        ac_dets: list[RpAcquired] = [
+        ac_determinants: list[RpAcquired] = [
             RpAcquired(marker.name)
             for marker in phenotype.markers
             if marker.type == marker_types[0]
         ]
-        var_dets: list[RpVariant] = [
+        var_determinants: list[RpVariant] = [
             RpVariant(marker.gene, marker.variant, variant_effects[marker.name])
             for marker in phenotype.markers
             if marker.type == marker_types[1]
@@ -403,7 +401,7 @@ def main(
                     phenotype.antimicrobial.group,
                 ),
                 "RESISTANT" if phenotype.is_resistant else "NOT_FOUND",
-                Determinants(ac_dets, var_dets),
+                Determinants(ac_determinants, var_determinants),
             )
         )
 
@@ -432,21 +430,6 @@ def main(
     )
 
     print(json.dumps(output_model, default=vars))
-
-    # Write JSON output
-    print(
-        json.dumps(
-            {
-                "ResFinder version": full_json["software_version"],
-                "ResFinder DB version": resfinder_db_version,
-                "PointFinder DB version": pointfinder_db_version,
-                "Disinfinder DB version": disinfinder_db_version,
-                "antibiogram": antibiogram,
-            },
-            default=vars,
-        ),
-        file=sys.stderr,
-    )
 
 
 if __name__ == "__main__":

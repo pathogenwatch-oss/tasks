@@ -11,5 +11,8 @@ RUN apt update && \
 COPY formatter.js /pathogenwatch/formatter.js
 COPY entrypoint.sh /pathogenwatch/entrypoint.sh
 
+# Test for singularity
+#RUN chmod -R o+rX /usr/local/mlst/index_dir
+
 ENTRYPOINT []
 CMD [ "/pathogenwatch/entrypoint.sh" ]
