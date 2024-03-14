@@ -1,1 +1,1 @@
-FROM registry.gitlab.com/cgps/cgps-cgmlst-clustering:v2.5.4
+FROM registry.gitlab.com/cgps/cgps-cgmlst-clustering:v2.5.5
