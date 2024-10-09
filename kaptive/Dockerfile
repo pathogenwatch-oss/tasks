@@ -1,19 +1,37 @@
-FROM python:3.9-slim
-ARG TAG
+FROM python:3.11-slim AS kaptive
+ARG KAPTIVE_VERSION=3.0.0b5
 
-RUN apt-get update && \
-    apt-get -y install git ncbi-blast+ && \
-    pip install biopython click && \
-    rm -rf /var/lib/apt/lists/* && \
-    git clone --depth 1 --branch "${TAG}" https://github.com/katholt/Kaptive && \
-    cd /Kaptive && \
-    rm -rf .git && \
-    apt-get -y --purge remove git
+ENV PYTHONDONTWRITEBYTECODE=1
+
+RUN apt update && \
+    apt install -y --no-install-recommends curl bzip2 &&  \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -L "https://github.com/lh3/minimap2/releases/download/v2.28/minimap2-2.28_x64-linux.tar.bz2" | tar -jxvf - && \
+    mv minimap2-2.28_x64-linux/minimap2 /usr/local/bin/ && \
+    rm -rf minimap2-2.28_x64-linux
+
+#RUN pip --no-cache-dir install dna_features_viewer kaptive==${KAPTIVE_VERSION}
+RUN pip --no-cache-dir install kaptive==${KAPTIVE_VERSION}
+
+ENTRYPOINT ["kaptive"]
+
+FROM kaptive AS dev
+
+ENV PYTHONDONTWRITEBYTECODE=1
+
+RUN pip --disable-pip-version-check --no-cache-dir install click
+
+FROM dev AS prod
+
+# "kpsc" or "ab"
+ARG SPECIES=kpsc
+ENV SPECIES=${SPECIES}
+
+RUN mkdir /Kaptive
 
 COPY kaptive-runner.py /Kaptive/kaptive-runner.py
 
 COPY entrypoint.sh /entrypoint.sh
 
-WORKDIR /Kaptive
-
-ENTRYPOINT ["sh", "/entrypoint.sh"]
+ENTRYPOINT sh /entrypoint.sh ${SPECIES}
