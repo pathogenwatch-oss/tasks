@@ -12,15 +12,21 @@ import click as click
 
 
 def run_kaptive(
-    fasta_path: str, database_name: str, uuid: str
+    fasta_path: str, database_name: str, tmp_id: str
 ) -> dict[str, str]:
-    os.mkdir(f"/tmp/{uuid}")
-    output_tsv = f"/tmp/{uuid}.tsv"
-    output = subprocess.run(
-        ["kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
-        check=True,
-        capture_output=True,
-    )
+    output_tsv = f"/tmp/{tmp_id}.tsv"
+    try:
+        output = subprocess.run(
+            ["kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Error running kaptive: {e}", file=sys.stderr)
+        print("STDOUT:", e.stdout, file=sys.stderr)
+        print("STDERR:", e.stderr, file=sys.stderr)
+        raise
     with open(output_tsv) as csv_fh:
         reader = csv.DictReader(csv_fh, delimiter="\t")
         for row in reader:
