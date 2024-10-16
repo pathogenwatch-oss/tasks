@@ -33,6 +33,8 @@ def run_kaptive(
             record = row
             del record["Assembly"]
             return record
+        result = reader.fieldnames
+        return dict(zip(result, [""] * len(result)))
 
 
 def run_type(fasta_path: str, database: str) -> dict[str, str]:

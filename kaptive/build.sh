@@ -4,7 +4,7 @@ set -euo pipefail
 set -x
 
 KAPTIVE_VERSION=${1:-3.0.0b5}
-RUNNER_VERSION=${2:-4}
+RUNNER_VERSION=${2:-5}
 
 for i in kpsc ab
 do
