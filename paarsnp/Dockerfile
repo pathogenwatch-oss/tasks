@@ -1,6 +1,6 @@
 ARG VERSION=v3.0.5
 
-FROM ubuntu:latest as curl
+FROM ubuntu:latest AS curl
 
 RUN apt -y update && apt -y install ca-certificates curl xz-utils && curl --version
 
