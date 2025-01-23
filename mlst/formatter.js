@@ -1,69 +1,32 @@
-const customUrls = {
-  470: {
-    mlst: 'https://pubmlst.org/bigsdb?db=pubmlst_abaumannii_oxford_seqdef',
-    mlst2: 'https://pubmlst.org/bigsdb?db=pubmlst_abaumannii_pasteur_seqdef'
-  }
-}
+const { createReadStream } = require('fs');
 
-function getCustomURL(speciesId, task) {
-  if (speciesId in customUrls && task in customUrls[speciesId]) {
-    return customUrls[speciesId][task];
-  }
-  return null;
-}
-
-const customSources = {
-  666: {
-    mlst: 'Non-O1/O139',
-    mlst2: 'O1/O139',
-  },
-  470: {
-    mlst: 'Oxford',
-    mlst2: 'Pasteur',
-  },
-};
-
-function getCustomSource(speciesId, task) {
-  if (speciesId in customSources && task in customSources[speciesId]) {
-    return customSources[speciesId][task];
-  }
-  return null;
-}
-
-function getSource(url) {
-  if (/pubmlst\.org/.test(url)) return 'PubMLST';
-  if (/pasteur\.fr/.test(url)) return 'Pasteur';
-  if (/warwick\.ac\.uk/.test(url)) return 'EnteroBase';
-  if (/cgmlst\.org/.test(url)) return 'Ridom';
-  if (/ngstar/.test(url)) return 'Public Health Agency of Canada';
-  return url;
-}
-
-function format({ st, code, scheme, url, genes, alleles, schemeSize }) {
+function format(result_obj) {
+  const { st, code, scheme, host, type, hostPath, schemeId, genes, alleles, schemeName, schemeSize,  raw_code: rawCode} = result_obj;
   const formattedAlleles = [];
   const matches = [];
 
   for (const gene of genes) {
-    const hits = alleles[gene];
+    if (!(gene in alleles)) {
+        formattedAlleles.push({gene, hit: ""})
+        continue;
+    }
     formattedAlleles.push({
       gene,
-      hits: hits.map(_ => _.id),
+      hit: alleles[gene].id,
     });
-    for (const hit of hits) {
-      matches.push(Object.assign({ gene }, hit));
-    }
+    matches.push(alleles[gene]);
   }
-
-  const speciesId = process.argv[2];
-  const task = process.argv[3];
 
   return {
     st,
     code,
-    scheme: scheme,
-    url: getCustomURL(speciesId, task) || url,
-    source: getCustomSource(speciesId, task) || getSource(url),
-    alleles: task === 'cgmlst' ? undefined : formattedAlleles,
+    scheme,
+    schemeName,
+    hostPath,
+    rawCode,
+    schemeId,
+    source: host,
+    alleles: formattedAlleles,
     matches,
     schemeSize,
   };
@@ -95,6 +58,7 @@ function read(stdin) {
 }
 
 read(process.stdin)
+// read(createReadStream('test.json'))
   .then(JSON.parse)
   .then(format)
   .then(JSON.stringify)

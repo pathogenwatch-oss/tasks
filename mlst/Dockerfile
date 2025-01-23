@@ -1,8 +1,6 @@
-ARG BASE
-FROM registry.gitlab.com/cgps/cgps-mlst/${BASE}
+ARG SOURCE_IMAGE
 
-ARG TASK
-ENV PW_TASK ${TASK:-mlst}
+FROM ${SOURCE_IMAGE}
 
 RUN apt update && \
     apt install -y --no-install-recommends curl && \
