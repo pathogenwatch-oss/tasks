@@ -1,0 +1,20 @@
+:Panel: Listeria monocytogenes
+Amoxicillin
+Ampicillin
+Ciprofloxacin
+Clindamycin
+Erythromycin
+Florfenicol
+Fluoroquinolone
+Fosfomycin
+Gentamicin
+Linezolid
+Kanamycin
+Penicillin
+Rifampicin
+Sulfamethoxazole
+Streptomycin
+Tetracycline
+Trimethoprim
+Tylosin
+Vancomycin

@@ -7,10 +7,10 @@ ENV SCHEME=${SCHEME}
 
 COPY modify_resfinder.py add_version.py version.txt /
 
-COPY ${SCHEME}_mods.csv /
+COPY mod_files /mod_files
 
-RUN python /modify_resfinder.py /${SCHEME}_mods.csv
+RUN python /modify_resfinder.py "${SCHEME}" -m /mod_files
 
-RUN sed -i 's&resfinder_formatter.py ${SCHEME}&resfinder_formatter.py ${SCHEME} | python /add_version.py&' /entrypoint.sh
+RUN sed -i 's&resfinder_formatter.py "${SCHEME}"&resfinder_formatter.py "${SCHEME}" | python /add_version.py&' /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

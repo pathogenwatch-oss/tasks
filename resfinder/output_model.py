@@ -1,7 +1,7 @@
-import dataclasses
+from dataclasses import dataclass, field
 
 
-@dataclasses.dataclass
+@dataclass
 class FullAcquiredMarker:
     name: str
     accession: str
@@ -9,12 +9,12 @@ class FullAcquiredMarker:
     antibiotics: list[str]
 
 
-@dataclasses.dataclass
+@dataclass
 class FullVariantMarker(FullAcquiredMarker):
     variant: str
 
 
-@dataclasses.dataclass
+@dataclass
 class VariantSite:
     name: str
     queryStart: int
@@ -23,7 +23,7 @@ class VariantSite:
     refStop: int
 
 
-@dataclasses.dataclass
+@dataclass
 class GeneMatch:
     pid: float
     queryId: str
@@ -36,49 +36,41 @@ class GeneMatch:
     forward: bool
 
 
-@dataclasses.dataclass
+@dataclass
 class Agent:
     name: str
     type: str
 
 
-@dataclasses.dataclass
+@dataclass
 class RpAcquired:
     gene: str
     resistanceEffect: str = "RESISTANCE"
 
 
-@dataclasses.dataclass
+@dataclass
 class RpVariant:
     gene: str
     variant: str
     resistanceEffect: str
 
 
-@dataclasses.dataclass
+@dataclass
 class Determinants:
-    acquired: list[RpAcquired]
-    variants: list[RpVariant]
+    acquired: list[RpAcquired] = field(default_factory=list)
+    variants: list[RpVariant] = field(default_factory=list)
 
 
-@dataclasses.dataclass
+@dataclass
 class AntimicrobialPhenotype:
     agent: Agent
     state: str
     determinants: Determinants
 
 
-@dataclasses.dataclass
-class Versions:
-    resfinderVersion: str
-    resfinderDbVersion: str
-    pointfinderDbVersion: str
-    disinfinderDbVersion: str
-
-
-@dataclasses.dataclass
+@dataclass
 class PwResult:
-    versions: Versions
+    versions: dict[str, str]
     acquired: list[FullAcquiredMarker]
     matches: list[GeneMatch]
     variants: list[FullVariantMarker]
