@@ -115,6 +115,14 @@ def read_phenotype(
     )
     with open(results_dir / filename, "r") as ph_h:
         for line in ph_h:
+            if line.startswith("# WARNING:"):
+                """
+                Can be found at the end of files:
+                # WARNING: Features with unknown phenotype
+                # Feature_ID	Region	Database	Hit	Class
+                parC;;1;;CP084529.1_108_v_AA	parC;;1;;CP084529.1
+                """
+                break
             if line.startswith("#") or line.strip() == "":
                 continue
             phenotype: list[str] = line.split("\t")
@@ -531,7 +539,7 @@ def main(
         resistance_profile,
     )
 
-    print(json.dumps(output_model, default=vars, indent=True))
+    print(json.dumps(output_model, default=vars))
 
 
 if __name__ == "__main__":
