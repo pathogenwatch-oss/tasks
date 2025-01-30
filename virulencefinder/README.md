@@ -21,6 +21,8 @@ The virulencefinder versions are currently hard-coded into the wrapper script. T
 
 ## Tested schemes
 
+The follwoing
+
 1. `virulence_ecoli`
-2. ... that is all
+2. `listeria`
 
