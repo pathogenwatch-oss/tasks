@@ -495,7 +495,7 @@ def main(
     ]
 
     resistance_profile: list[AntimicrobialPhenotype] = []
-    for phenotype in antibiogram:
+    for phenotype in sorted(antibiogram, key=lambda x: x.antimicrobial.name):
         ac_determinants: list[RpAcquired] = [
             RpAcquired(marker.name)
             for marker in phenotype.markers
