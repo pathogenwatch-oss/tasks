@@ -110,10 +110,10 @@ def read_phenotype(
     scheme_name: str,
 ) -> list[Phenotype]:
     phenotypes: list[Phenotype] = []
-    filename = (
-        f"pheno_table_{scheme_name}.txt" if scheme != "other" else "pheno_table.txt"
-    )
-    with open(results_dir / filename, "r") as ph_h:
+    default_file: Path = results_dir / "pheno_table.txt"
+    species_file: Path = results_dir / f"pheno_table_{scheme_name}.txt"
+    filename = species_file if species_file.exists() else default_file
+    with open(filename, "r") as ph_h:
         for line in ph_h:
             if line.startswith("# WARNING:"):
                 """
@@ -341,20 +341,28 @@ def read_ecoli_variants(f: TextIOWrapper) -> dict[str, dict[str, str]]:
 variant_readers: dict[str, Callable[[TextIOWrapper], dict[str, dict[str, str]]]] = {
     "salmonella": read_salmonella_variants,
     "ecoli": read_ecoli_variants,
+    "listeria_monocytogenes": lambda f: {},
 }
 
 
 def read_variant_effects(
     phenotypes_file: Path, scheme: str
 ) -> dict[str, dict[str, str]]:
-    effects: dict[str, dict[str, str]] = defaultdict(dict)
-    if not phenotypes_file.exists():
-        print(f"No phenotype file found at {phenotypes_file}", file=sys.stderr)
-        return effects
-    else:
+    print(
+        f"Reading variant effects for {scheme} scheme from {phenotypes_file}",
+        file=sys.stderr,
+    )
+    print(
+        f"Phenotypes file {phenotypes_file} exists: {phenotypes_file.exists()}",
+        file=sys.stderr,
+    )
+    if phenotypes_file.exists():
         print(f"Reading phenotype file: {phenotypes_file}", file=sys.stderr)
-    with open(phenotypes_file, "r") as f:
-        return variant_readers[scheme](f)
+        with open(phenotypes_file, "r") as f:
+            return variant_readers[scheme](f)
+    else:
+        print(f"No phenotype file found at {phenotypes_file}", file=sys.stderr)
+        return {}
 
 
 def main(
