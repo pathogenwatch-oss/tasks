@@ -1,8 +1,34 @@
 #!/usr/bin/env bash
 
-export PIRS_COVERAGE=50
+set -eou pipefail
+
+# Function to handle errors
+error_handler() {
+    local last_command=$1
+    echo "Error: Command '$last_command' failed" >&2
+    exit 1
+}
+
+# Set up the error trap
+trap 'error_handler "${BASH_COMMAND}"' ERR
+
+# Set a default value for PIRS_COVERAGE if not already set
+export PIRS_COVERAGE=${PIRS_COVERAGE:-50}
+
+# Ensure input is provided
+if [ -t 0 ]; then
+    echo "Error: No input provided. Please pipe in the input data." >&2
+    exit 1
+fi
+
+# Run SeroBA and capture the result
 result=$(cat - | /root/bin/run_seroba.sh)
-# warn=$([[ "$result" =~ ^(untypable|32F|33A/33F|11E|19F|32A|35A|06A|possible 6(A|C|D|E))$ ]] && echo 'true' || echo 'false')
-jq -n \
-   --arg value "$result" \
-   '{ source: "SeroBA", value: $value }'
+
+# Check if result is empty
+if [ -z "$result" ]; then
+    echo "Error: SeroBA returned an empty result" >&2
+    exit 1
+fi
+
+# Use jq to create the JSON output
+jq -n --arg value "$result" '{ source: "SeroBA", value: $value }'
