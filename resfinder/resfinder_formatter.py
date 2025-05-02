@@ -302,7 +302,7 @@ def read_ecoli_variants(f: TextIOWrapper) -> dict[str, dict[str, str]]:
     for line in f.readlines():
         if line.startswith("#"):
             continue
-        row: [str] = line.strip().split("\t")
+        row: list[str] = line.strip().split("\t")
         for mutant in row[6].split(","):
             if row[1] == "AA":
                 variant = f"{row[0].split('_')[0]}_{row[5]}{row[3]}{mutant}"
@@ -315,13 +315,8 @@ def read_ecoli_variants(f: TextIOWrapper) -> dict[str, dict[str, str]]:
                     # e.g.. ampC-promoter_-15_-14insGT
                     position: int = int(row[3])
                     step: int = 1 if position > 1 else -1
-                    coords: list[int] = sorted(
-                        [position, position + (step * (len(mutant) - 1))]
-                    )
-                    positions: str = "_".join(
-                        str(position)
-                        for position in sorted(list(range(coords[0], coords[1] + 1)))
-                    )
+                    coords: list[int] = sorted([position, position + step])
+                    positions: str = "_".join(str(position) for position in coords)
                     variant: str = f"{name}_{positions}{row[5]}{mutant}"
                 else:
                     variant: str = f"{name}_{row[3]}{row[5]}>{mutant}"
