@@ -3,8 +3,8 @@
 set -euo pipefail
 set -x
 
-KAPTIVE_VERSION=${1:-3.0.0b5}
-RUNNER_VERSION=${2:-5}
+KAPTIVE_VERSION=${1:-3.1.0}
+RUNNER_VERSION=${2:-6}
 
 for i in kpsc ab
 do
