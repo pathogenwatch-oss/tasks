@@ -10,5 +10,5 @@ for i in kpsc ab
 do
   IMAGE_NAME=registry.gitlab.com/cgps/pathogenwatch-tasks/kaptive:"${i}"-v"${KAPTIVE_VERSION}"-"${RUNNER_VERSION}"
   docker build --target prod --rm --build-arg KAPTIVE_VERSION="${KAPTIVE_VERSION}" --build-arg SPECIES=${i} -t "${IMAGE_NAME}" .
-  docker push "${IMAGE_NAME}"
+#  docker push "${IMAGE_NAME}"
 done

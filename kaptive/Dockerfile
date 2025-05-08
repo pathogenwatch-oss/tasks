@@ -28,10 +28,19 @@ FROM dev AS prod
 ARG SPECIES=kpsc
 ENV SPECIES=${SPECIES}
 
+
 RUN mkdir /Kaptive
+
+WORKDIR /Kaptive
+
+RUN curl -L -o sanitiser "https://github.com/CorinYeatsCGPS/sanitise-fasta/releases/download/1/sanitiser" && \
+    chmod +x ./sanitiser && \
+    mv sanitiser /usr/local/bin/
 
 COPY kaptive-runner.py /Kaptive/kaptive-runner.py
 
-COPY entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /Kaptive/entrypoint.sh
 
-ENTRYPOINT sh /entrypoint.sh ${SPECIES}
+RUN chmod +x /Kaptive/entrypoint.sh
+
+ENTRYPOINT ["/Kaptive/entrypoint.sh"]

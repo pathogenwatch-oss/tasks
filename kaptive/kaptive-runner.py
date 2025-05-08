@@ -15,7 +15,7 @@ def run_kaptive(fasta_path: str, database_name: str, tmp_id: str) -> dict[str, s
     output_tsv = f"/tmp/{tmp_id}.tsv"
     try:
         output = subprocess.run(
-            ["uvx", "kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
+            ["kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
             check=True,
             capture_output=True,
             text=True,
