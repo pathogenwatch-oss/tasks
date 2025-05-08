@@ -11,16 +11,14 @@ import click as click
 # Currently, this only runs the acinetobacter baumanii databases.
 
 
-def run_kaptive(
-    fasta_path: str, database_name: str, tmp_id: str
-) -> dict[str, str]:
+def run_kaptive(fasta_path: str, database_name: str, tmp_id: str) -> dict[str, str]:
     output_tsv = f"/tmp/{tmp_id}.tsv"
     try:
         output = subprocess.run(
-            ["kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
+            ["uvx", "kaptive", "assembly", database_name, fasta_path, "-o", output_tsv],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
         )
     except subprocess.CalledProcessError as e:
         print(f"Error running kaptive: {e}", file=sys.stderr)
@@ -52,17 +50,18 @@ def get_version():
 
 
 @click.command()
-@click.option(
-    "-f",
-    "--fasta_path",
-    required=True,
-    help="FASTA file path."
-)
+@click.option("-f", "--fasta_path", required=True, help="FASTA file path.")
 @click.option(
     "-s",
     "--species",
     required=False,
-    type=click.Choice(["kpsc", "ab",],case_sensitive=False),
+    type=click.Choice(
+        [
+            "kpsc",
+            "ab",
+        ],
+        case_sensitive=False,
+    ),
     default="kpsc",
     help="Species to search against.",
 )
@@ -80,7 +79,10 @@ def run_fasta(fasta_path: str, species: str):
         ],
     }
 
-    results = {database["key"]: run_type(fasta_path, database["tag"]) for database in locus_databases[species]}
+    results = {
+        database["key"]: run_type(fasta_path, database["tag"])
+        for database in locus_databases[species]
+    }
 
     output = {
         "kaptiveVersion": version,
@@ -90,7 +92,7 @@ def run_fasta(fasta_path: str, species: str):
         results[database["key"]]["name"] = database["name"]
         output[database["key"]] = results[database["key"]]
 
-    print(json.dumps(output), file=sys.stdout)
+    print(json.dumps(output, ensure_ascii=False), file=sys.stdout)
 
 
 if __name__ == "__main__":

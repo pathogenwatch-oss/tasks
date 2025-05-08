@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Deprecated
+
 kleborate_version="v2.3.1"
 internal_version="v2.3.3"
 
