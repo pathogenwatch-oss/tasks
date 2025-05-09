@@ -33,7 +33,7 @@ RUN mkdir /Kaptive
 
 WORKDIR /Kaptive
 
-RUN curl -L -o sanitiser "https://github.com/CorinYeatsCGPS/sanitise-fasta/releases/download/1/sanitiser" && \
+RUN curl -L -o sanitiser "https://github.com/CorinYeatsCGPS/sanitise-fasta/releases/download/2/sanitiser" && \
     chmod +x ./sanitiser && \
     mv sanitiser /usr/local/bin/
 
