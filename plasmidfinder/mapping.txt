@@ -1,0 +1,11 @@
+1279 gram_positive
+1301 gram_positive
+1350 gram_positive
+1637 gram_positive
+1763 gram_positive
+547 enterobacteriales
+561 enterobacteriales
+570 enterobacteriales
+590 enterobacteriales
+620 enterobacteriales
+662 enterobacteriales
