@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 import uuid
+from typing import Any
 
 import click as click
 
@@ -83,11 +84,12 @@ def run_fasta(fasta_path: str, species: str):
         for database in locus_databases[species]
     }
 
-    output = {
+    output: dict[str, Any] = {
         "kaptiveVersion": version,
     }
 
     for database in locus_databases[species]:
+        print(f"Running type for {database['key']}...", file=sys.stderr)
         results[database["key"]]["name"] = database["name"]
         output[database["key"]] = results[database["key"]]
 

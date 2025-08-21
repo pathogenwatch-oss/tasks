@@ -42,7 +42,7 @@ if ! plasmidfinder.py --speciesinfo_json "$(cat /${SCHEME}_tax.json)" -i /tmp/tm
     exit 1
 fi
 
-if ! python3 /wrapper.py /output/data.json /config.json | sanitiser decode -; then
+if ! python3 /wrapper.py /output/data.json /config.json | sanitiser -json decode -; then
     echo "Error: Failed to process the output." >&2
     exit 1
 fi

@@ -26,14 +26,15 @@ FROM dev AS prod
 
 # "kpsc" or "ab"
 ARG SPECIES=kpsc
+ARG SANITISER_VERSION=4
 ENV SPECIES=${SPECIES}
-
+ENV SANITISER_VERSION=${SANITISER_VERSION}
 
 RUN mkdir /Kaptive
 
 WORKDIR /Kaptive
 
-RUN curl -L -o sanitiser "https://github.com/CorinYeatsCGPS/sanitise-fasta/releases/download/2/sanitiser" && \
+RUN curl -L -o sanitiser "https://github.com/CorinYeatsCGPS/sanitise-fasta/releases/download/${SANITISER_VERSION}/sanitiser" && \
     chmod +x ./sanitiser && \
     mv sanitiser /usr/local/bin/
 

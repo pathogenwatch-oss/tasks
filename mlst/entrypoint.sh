@@ -10,13 +10,13 @@ error_report() {
 trap 'error_report' ERR
 
 # Create the encoded FASTA
-if ! sanitiser --store /mapping_store encode - > /tmp/tmp.fa; then
+if ! sanitiser -store /mapping_store encode - > /tmp/tmp.fa; then
     echo "Error: Failed to create encoded FASTA file." >&2
     exit 1
 fi
 
 # Run Kaptive
-if  ! cat /tmp/tmp.fa | /usr/local/bin/node --max-old-space-size=4096 /usr/local/mlst/index.js | sanitiser --store /mapping_store decode - | /usr/local/bin/node /pathogenwatch/formatter.js; then
+if  ! cat /tmp/tmp.fa | /usr/local/bin/node --max-old-space-size=4096 /usr/local/mlst/index.js | sanitiser -store /mapping_store -json decode - | /usr/local/bin/node /pathogenwatch/formatter.js; then
     echo "Error: Failed to run." >&2
     exit 1
 fi
