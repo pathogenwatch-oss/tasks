@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "docker",
+#     "typer",
+# ]
+# ///
+
 import json
 import sys
 from collections import defaultdict
@@ -5,7 +13,7 @@ from typing import Annotated
 
 import docker
 import typer
-from docker.errors import BuildError, ImageNotFound
+from docker.errors import APIError, BuildError, ImageNotFound
 
 
 def build(
@@ -29,10 +37,21 @@ def build(
             _ = client.images.get(scheme["image"])
         except ImageNotFound:
             print(
-                f"Unable to find the source image for {scheme['image']}",
+                f"Unable to find the source image for {scheme['image']} locally",
                 file=sys.stderr,
             )
-            exit(1)
+            try:
+                _ = client.images.pull(scheme["image"])
+                print(
+                    f"Pulled the source image for {scheme['image']} successfully",
+                    file=sys.stderr,
+                )
+            except APIError as e:
+                print(
+                    f"Error pulling the source image for {scheme['image']}: {e}",
+                    file=sys.stderr,
+                )
+                exit(1)
         name = scheme["image"].split("/")[-1]
         new_image_name = f"registry.gitlab.com/cgps/pathogenwatch-tasks/{name}"
         print(f"Building image {new_image_name} for {scheme['name']}", file=sys.stderr)
