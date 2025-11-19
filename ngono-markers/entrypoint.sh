@@ -2,4 +2,4 @@
 
 cat - > /tmp/sequence.fa
 
-python3 /ngono-markers.py --fasta=/tmp/sequence.fa --blast_db=/db
+uv run /ngono-markers.py /tmp/sequence.fa --blast-db /db
