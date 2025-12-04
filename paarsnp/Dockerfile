@@ -1,4 +1,4 @@
-ARG VERSION=v3.0.5
+ARG VERSION=v3.1.2
 
 FROM ubuntu:latest AS curl
 
