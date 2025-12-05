@@ -12,8 +12,8 @@ fi
 
 echo "Building Seroba Docker image for version ${VERSION}"
 
-docker build -t "registry.gitlab.com/cgps/pathogenwatch-tasks/seroba:v${VERSION}" --build-arg VERSION="${VERSION}" .
+docker build -t "registry.gitlab.com/cgps/pathogenwatch-tasks/serotype:seroba-v${VERSION}" --build-arg VERSION="${VERSION}" .
 
 if [ "$push" = "true" ]; then
-  docker push "registry.gitlab.com/cgps/pathogenwatch-tasks/seroba:v${VERSION}"
+  docker push "registry.gitlab.com/cgps/pathogenwatch-tasks/serotype:seroba-v${VERSION}"
 fi
